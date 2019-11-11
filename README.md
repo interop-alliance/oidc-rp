@@ -1,4 +1,4 @@
-# OpenID Connect Relying Party _(oidc-rp)_
+# OpenID Connect Relying Party _(@interop/oidc-rp)_
 
 [![Build Status](https://travis-ci.org/interop-alliance/oidc-rp.svg?branch=master&style=flat-square)](https://travis-ci.org/interop-alliance/oidc-rp)
 [![npm version](https://badge.fury.io/js/%40interop-alliance%2Foidc-rp.svg)](https://badge.fury.io/js/%40interop-alliance%2Foidc-rp)
@@ -42,7 +42,7 @@
 ## Install
 
 ```bash
-$ npm install @solid/oidc-rp --save
+$ npm install @interop/oidc-rp --save
 ```
 
 ## Usage
@@ -50,7 +50,7 @@ $ npm install @solid/oidc-rp --save
 ### Node.js
 
 ```
-const RelyingParty = require('@solid/oidc-rp')
+const RelyingParty = require('@interop/oidc-rp')
 ```
 
 ### Browser
@@ -111,12 +111,7 @@ npm test
 
 ### Code of conduct
 
-* @solid/oidc-rp follows the [Contributor Covenant](http://contributor-covenant.org/version/1/3/0/) Code of Conduct.
-
-### Contributors
-
-* Christian Smith [@christiansmith](https://github.com/christiansmith)
-* Dmitri Zagidulin [@dmitrizagidulin](https://github.com/dmitrizagidulin)
+* @interop/oidc-rp follows the [Contributor Covenant](http://contributor-covenant.org/version/1/3/0/) Code of Conduct.
 
 ## MIT License
 
