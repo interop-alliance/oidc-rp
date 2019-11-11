@@ -27,104 +27,89 @@ class AuthenticationRequest {
    *
    * @returns {Promise}
    */
-  static create (rp, options, session) {
+  static async create (rp, options, session) {
     const { provider, defaults, registration } = rp
+    let params
 
-    let issuer, endpoint, client, params
+    // validate presence of OP configuration, RP client registration,
+    // and default parameters
+    assert(provider.configuration,
+      'RelyingParty provider OpenID Configuration is missing')
 
-    return Promise.resolve()
-      .then(() => {
-        // validate presence of OP configuration, RP client registration,
-        // and default parameters
-        assert(provider.configuration,
-          'RelyingParty provider OpenID Configuration is missing')
+    assert(defaults.authenticate,
+      'RelyingParty default authentication parameters are missing')
 
-        assert(defaults.authenticate,
-          'RelyingParty default authentication parameters are missing')
+    assert(registration,
+      'RelyingParty client registration is missing')
 
-        assert(registration,
-          'RelyingParty client registration is missing')
+    // define basic elements of the request
+    const issuer = provider.configuration.issuer
+    const endpoint = provider.configuration.authorization_endpoint
+    const client = { client_id: registration.client_id }
+    params = Object.assign(defaults.authenticate, client, options)
 
-        // define basic elements of the request
-        issuer = provider.configuration.issuer
-        endpoint = provider.configuration.authorization_endpoint
-        client = { client_id: registration.client_id }
-        params = Object.assign(defaults.authenticate, client, options)
+    // validate presence of required configuration and parameters
+    assert(issuer,
+      'Missing issuer in provider OpenID Configuration')
 
-        // validate presence of required configuration and parameters
-        assert(issuer,
-          'Missing issuer in provider OpenID Configuration')
+    assert(endpoint,
+      'Missing authorization_endpoint in provider OpenID Configuration')
 
-        assert(endpoint,
-          'Missing authorization_endpoint in provider OpenID Configuration')
+    assert(params.scope,
+      'Missing scope parameter in authentication request')
 
-        assert(params.scope,
-          'Missing scope parameter in authentication request')
+    assert(params.response_type,
+      'Missing response_type parameter in authentication request')
 
-        assert(params.response_type,
-          'Missing response_type parameter in authentication request')
+    assert(params.client_id,
+      'Missing client_id parameter in authentication request')
 
-        assert(params.client_id,
-          'Missing client_id parameter in authentication request')
+    assert(params.redirect_uri,
+      'Missing redirect_uri parameter in authentication request')
 
-        assert(params.redirect_uri,
-          'Missing redirect_uri parameter in authentication request')
+    // generate state and nonce random octets
+    params.state = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    params.nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
 
-        // generate state and nonce random octets
-        params.state = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-        params.nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    // hash the state and nonce parameter values
+    const digests = await Promise.all([
+      crypto.subtle.digest({ name: 'SHA-256' }, new Uint8Array(params.state)),
+      crypto.subtle.digest({ name: 'SHA-256' }, new Uint8Array(params.nonce))
+    ])
 
-        // hash the state and nonce parameter values
-        return Promise.all([
-          crypto.subtle.digest({ name: 'SHA-256' }, new Uint8Array(params.state)),
-          crypto.subtle.digest({ name: 'SHA-256' }, new Uint8Array(params.nonce))
-        ])
-      })
+    // serialize the request with original values, store in session by
+    // encoded state param, and replace state/nonce octets with encoded
+    // digests
+    const state = base64url(Buffer.from(digests[0]))
+    const nonce = base64url(Buffer.from(digests[1]))
+    const key = `${issuer}/requestHistory/${state}`
 
-      // serialize the request with original values, store in session by
-      // encoded state param, and replace state/nonce octets with encoded
-      // digests
-      .then(digests => {
-        const state = base64url(Buffer.from(digests[0]))
-        const nonce = base64url(Buffer.from(digests[1]))
-        const key = `${issuer}/requestHistory/${state}`
+    // store the request params for response validation
+    // with serialized octet values for state and nonce
+    session[key] = JSON.stringify(params)
 
-        // store the request params for response validation
-        // with serialized octet values for state and nonce
-        session[key] = JSON.stringify(params)
+    // replace state and nonce octets with base64url encoded digests
+    params.state = state
+    params.nonce = nonce
 
-        // replace state and nonce octets with base64url encoded digests
-        params.state = state
-        params.nonce = nonce
-      })
+    const sessionKeys = await AuthenticationRequest.generateSessionKeys()
+    await AuthenticationRequest.storeSessionKeys(sessionKeys, params, session)
 
-      .then(() => AuthenticationRequest.generateSessionKeys())
+    // optionally encode a JWT with the request parameters
+    // and replace params with `{ request: <jwt> }
+    if (provider.configuration.request_parameter_supported) {
+      params = await AuthenticationRequest.encodeRequestParams(params)
+    }
 
-      .then(sessionKeys => {
-        AuthenticationRequest.storeSessionKeys(sessionKeys, params, session)
-      })
+    // render the request URI and terminate the algorithm
+    const url = new URL(endpoint)
+    url.search = FormUrlEncoded.encode(params)
 
-      // optionally encode a JWT with the request parameters
-      // and replace params with `{ request: <jwt> }
-      .then(() => {
-        if (provider.configuration.request_parameter_supported) {
-          return AuthenticationRequest.encodeRequestParams(params)
-
-            .then(encodedParams => { params = encodedParams })
-        }
-      })
-
-      // render the request URI and terminate the algorithm
-      .then(() => {
-        const url = new URL(endpoint)
-        url.search = FormUrlEncoded.encode(params)
-
-        return url.href
-      })
+    return url.href
   }
 
-  static generateSessionKeys () {
-    return crypto.subtle.generateKey(
+  static async generateSessionKeys () {
+    const keyPair = await crypto.subtle.generateKey(
       {
         name: 'RSASSA-PKCS1-v1_5',
         modulusLength: 2048,
@@ -134,18 +119,14 @@ class AuthenticationRequest {
       true,
       ['sign', 'verify']
     )
-      .then((keyPair) => {
-        // returns a keypair object
-        return Promise.all([
-          crypto.subtle.exportKey('jwk', keyPair.publicKey),
-          crypto.subtle.exportKey('jwk', keyPair.privateKey)
-        ])
-      })
-      .then(jwkPair => {
-        const [publicJwk, privateJwk] = jwkPair
+    // returns a keypair object
+    const jwkPair = await Promise.all([
+      crypto.subtle.exportKey('jwk', keyPair.publicKey),
+      crypto.subtle.exportKey('jwk', keyPair.privateKey)
+    ])
+    const [publicJwk, privateJwk] = jwkPair
 
-        return { public: publicJwk, private: privateJwk }
-      })
+    return { public: publicJwk, private: privateJwk }
   }
 
   static storeSessionKeys (sessionKeys, params, session) {
@@ -154,7 +135,7 @@ class AuthenticationRequest {
     params.key = sessionKeys.public
   }
 
-  static encodeRequestParams (params) {
+  static async encodeRequestParams (params) {
     const excludeParams = ['scope', 'client_id', 'response_type', 'state']
 
     const keysToEncode = Object.keys(params).filter(key => !excludeParams.includes(key))
@@ -168,20 +149,18 @@ class AuthenticationRequest {
     const requestParamJwt = new JWT({
       header: { alg: 'none' },
       payload
-    }, { filter: false })
+    })
 
-    return requestParamJwt.encode()
-      .then(requestParamCompact => {
-        const newParams = {
-          scope: params.scope,
-          client_id: params.client_id,
-          response_type: params.response_type,
-          request: requestParamCompact,
-          state: params.state
-        }
+    const requestParamCompact = await requestParamJwt.encode()
+    const newParams = {
+      scope: params.scope,
+      client_id: params.client_id,
+      response_type: params.response_type,
+      request: requestParamCompact,
+      state: params.state
+    }
 
-        return newParams
-      })
+    return newParams
   }
 }
 
