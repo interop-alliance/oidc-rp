@@ -26,7 +26,7 @@ class AuthenticationResponse {
    * @param mode {string} 'query'/'fragment'/'form_post',
    *   determined in `parseResponse()`
    */
-  constructor ({rp, redirect, body, session, mode, params = {}}) {
+  constructor ({ rp, redirect, body, session, mode, params = {} }) {
     this.rp = rp
     this.redirect = redirect
     this.body = body
@@ -66,7 +66,7 @@ class AuthenticationResponse {
    * @returns {object}
    */
   static parseResponse (response) {
-    let {redirect, body} = response
+    const { redirect, body } = response
 
     // response must be either a redirect uri or request body, but not both
     if ((redirect && body) || (!redirect && !body)) {
@@ -75,8 +75,8 @@ class AuthenticationResponse {
 
     // parse redirect uri
     if (redirect) {
-      let url = new URL(redirect)
-      let {search, hash} = url
+      const url = new URL(redirect)
+      const { search, hash } = url
 
       if ((search && hash) || (!search && !hash)) {
         throw new HttpError(400, 'Invalid response mode')
@@ -120,10 +120,10 @@ class AuthenticationResponse {
 
     if (errorCode) {
       const errorParams = {}
-      errorParams['error'] = errorCode
-      errorParams['error_description'] = response.params['error_description']
-      errorParams['error_uri'] = response.params['error_uri']
-      errorParams['state'] = response.params['state']
+      errorParams.error = errorCode
+      errorParams.error_description = response.params.error_description
+      errorParams.error_uri = response.params.error_uri
+      errorParams.state = response.params.state
 
       const error = new Error(`AuthenticationResponse error: ${errorCode}`)
       error.info = errorParams
@@ -140,17 +140,17 @@ class AuthenticationResponse {
    * @returns {Promise}
    */
   static matchRequest (response) {
-    let {rp, params, session} = response
-    let state = params.state
-    let issuer = rp.provider.configuration.issuer
+    const { rp, params, session } = response
+    const state = params.state
+    const issuer = rp.provider.configuration.issuer
 
     if (!state) {
       throw new Error(
         'Missing state parameter in authentication response')
     }
 
-    let key = `${issuer}/requestHistory/${state}`
-    let request = session[key]
+    const key = `${issuer}/requestHistory/${state}`
+    const request = session[key]
 
     if (!request) {
       throw new Error(
@@ -168,8 +168,8 @@ class AuthenticationResponse {
    * @returns {Promise}
    */
   static validateStateParam (response) {
-    let octets = new Uint8Array(response.request.state)
-    let encoded = response.params.state
+    const octets = new Uint8Array(response.request.state)
+    const encoded = response.params.state
 
     return crypto.subtle.digest({ name: 'SHA-256' }, octets).then(digest => {
       if (encoded !== base64url(Buffer.from(digest))) {
@@ -202,8 +202,8 @@ class AuthenticationResponse {
    * @returns {Promise}
    */
   static validateResponseParams (response) {
-    let {request, params} = response
-    let expectedParams = request.response_type.split(' ')
+    const { request, params } = response
+    const expectedParams = request.response_type.split(' ')
 
     if (expectedParams.includes('code')) {
       assert(params.code,
@@ -234,58 +234,58 @@ class AuthenticationResponse {
    * @returns {Promise} response object
    */
   static exchangeAuthorizationCode (response) {
-    let {rp, params, request} = response
-    let code = params.code
+    const { rp, params, request } = response
+    const code = params.code
 
     // only exchange the authorization code when the response type is "code"
-    if (!code || request['response_type'] !== 'code') {
+    if (!code || request.response_type !== 'code') {
       return Promise.resolve(response)
     }
 
-    let {provider, registration} = rp
-    let id = registration['client_id']
-    let secret = registration['client_secret']
+    const { provider, registration } = rp
+    const id = registration.client_id
+    const secret = registration.client_secret
 
     // verify the client is not public
     if (!secret) {
-        return Promise.reject(new Error(
-          'Client cannot exchange authorization code because ' +
+      return Promise.reject(new Error(
+        'Client cannot exchange authorization code because ' +
           'it is not a confidential client'))
     }
 
     // initialize token request arguments
-    let endpoint = provider.configuration.token_endpoint
-    let method = 'POST'
+    const endpoint = provider.configuration.token_endpoint
+    const method = 'POST'
 
     // initialize headers
-    let headers = new Headers({
+    const headers = new Headers({
       'Content-Type': 'application/x-www-form-urlencoded'
     })
 
     // initialize the token request parameters
-    let bodyContents = {
-      'grant_type': 'authorization_code',
-      'code': code,
-      'redirect_uri': request['redirect_uri']
+    const bodyContents = {
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: request.redirect_uri
     }
 
     // determine client authentication method
-    let authMethod = registration['token_endpoint_auth_method']
-      || 'client_secret_basic'
+    const authMethod = registration.token_endpoint_auth_method ||
+      'client_secret_basic'
 
     // client secret basic authentication
     if (authMethod === 'client_secret_basic') {
-      let credentials = new Buffer(`${id}:${secret}`).toString('base64')
+      const credentials = Buffer.from(`${id}:${secret}`).toString('base64')
       headers.set('Authorization', `Basic ${credentials}`)
     }
 
     // client secret post authentication
     if (authMethod === 'client_secret_post') {
-      bodyContents['client_id'] = id
-      bodyContents['client_secret'] = secret
+      bodyContents.client_id = id
+      bodyContents.client_secret = secret
     }
 
-    let body = FormUrlEncoded.encode(bodyContents)
+    const body = FormUrlEncoded.encode(bodyContents)
 
     // TODO
     // client_secret_jwt authentication
@@ -293,17 +293,17 @@ class AuthenticationResponse {
 
     // make the token request
 
-    return fetch(endpoint, {method, headers, body})
+    return fetch(endpoint, { method, headers, body })
       .then(onHttpError('Error exchanging authorization code'))
       .then(tokenResponse => tokenResponse.json())
       .then(tokenResponse => {
-        assert(tokenResponse['access_token'],
+        assert(tokenResponse.access_token,
           'Missing access_token in token response')
 
-        assert(tokenResponse['token_type'],
+        assert(tokenResponse.token_type,
           'Missing token_type in token response')
 
-        assert(tokenResponse['id_token'],
+        assert(tokenResponse.id_token,
           'Missing id_token in token response')
 
         // anything else?
@@ -313,7 +313,6 @@ class AuthenticationResponse {
         return response
       })
   }
-
 
   /**
    * validateIDToken
@@ -366,7 +365,7 @@ class AuthenticationResponse {
    * @returns {AuthenticationResponse} Chainable
    */
   static decodeIDToken (response) {
-    let jwt = response.params.id_token
+    const jwt = response.params.id_token
 
     try {
       response.decoded = IDToken.decode(jwt)
@@ -380,7 +379,6 @@ class AuthenticationResponse {
     return response
   }
 
-
   /**
    * validateIssuer
    *
@@ -388,8 +386,8 @@ class AuthenticationResponse {
    * @returns {Promise}
    */
   static validateIssuer (response) {
-    let configuration = response.rp.provider.configuration
-    let payload = response.decoded.payload
+    const configuration = response.rp.provider.configuration
+    const payload = response.decoded.payload
 
     // validate issuer of token matches this relying party's provider
     if (payload.iss !== configuration.issuer) {
@@ -406,16 +404,16 @@ class AuthenticationResponse {
    * @returns {Promise}
    */
   static validateAudience (response) {
-    let registration = response.rp.registration
-    let {aud, azp} = response.decoded.payload
+    const registration = response.rp.registration
+    const { aud, azp } = response.decoded.payload
 
     // validate audience includes this relying party
-    if (typeof aud === 'string' && aud !== registration['client_id']) {
+    if (typeof aud === 'string' && aud !== registration.client_id) {
       throw new Error('Mismatching audience in id_token')
     }
 
     // validate audience includes this relying party
-    if (Array.isArray(aud) && !aud.includes(registration['client_id'])) {
+    if (Array.isArray(aud) && !aud.includes(registration.client_id)) {
       throw new Error('Mismatching audience in id_token')
     }
 
@@ -425,13 +423,12 @@ class AuthenticationResponse {
     }
 
     // validate authorized party is this relying party
-    if (azp && azp !== registration['client_id']) {
+    if (azp && azp !== registration.client_id) {
       throw new Error('Mismatching azp claim in id_token')
     }
 
     return response
   }
-
 
   /**
    * resolveKeys
@@ -439,33 +436,33 @@ class AuthenticationResponse {
    * @param {Object} response
    * @returns {Promise}
    */
-  static resolveKeys (response) {
-    let rp = response.rp
-    let provider = rp.provider
-    let decoded = response.decoded
+  static async resolveKeys (response) {
+    const rp = response.rp
+    const provider = rp.provider
+    const decoded = response.decoded
+    let jwks
     let isFreshJwks = false
 
-    return Promise.resolve(provider.jwks)
+    if (provider.jwks) {
+      jwks = provider.jwks
+    } else {
+      isFreshJwks = true
+      jwks = await rp.jwks()
+    }
 
-      .then(jwks => jwks ? jwks : (isFreshJwks = true, rp.jwks()))
+    if (decoded.resolveKeys(jwks)) {
+      return response
+    }
 
-      .then(jwks => {
-        if (decoded.resolveKeys(jwks)) {
-          return Promise.resolve(response)
-        }
+    if (!isFreshJwks) {
+      // The OP JWK Set cached by the RP may be stale due to key rotation by the OP.
+      jwks = await rp.jwks()
+      if (decoded.resolveKeys(jwks)) {
+        return response
+      }
+    }
 
-        if (!isFreshJwks) {
-          // The OP JWK Set cached by the RP may be stale due to key rotation by the OP.
-          return rp.jwks().then(jwks => {
-            if (decoded.resolveKeys(jwks)) {
-              return Promise.resolve(response)
-            }
-            throw new Error('Cannot resolve signing key for ID Token')
-          })
-        }
-
-        throw new Error('Cannot resolve signing key for ID Token')
-      })
+    throw new Error('Cannot resolve signing key for ID Token.')
   }
 
   /**
@@ -475,9 +472,9 @@ class AuthenticationResponse {
    * @returns {Promise}
    */
   static verifySignature (response) {
-    let alg = response.decoded.header.alg
-    let registration = response.rp.registration
-    let expectedAlgorithm = registration['id_token_signed_response_alg'] || 'RS256'
+    const alg = response.decoded.header.alg
+    const registration = response.rp.registration
+    const expectedAlgorithm = registration.id_token_signed_response_alg || 'RS256'
 
     // validate signing algorithm matches expectation
     if (alg !== expectedAlgorithm) {
@@ -501,7 +498,7 @@ class AuthenticationResponse {
    * @returns {Promise}
    */
   static validateExpires (response) {
-    let exp = response.decoded.payload.exp
+    const exp = response.decoded.payload.exp
 
     // validate expiration of token
     if (exp <= Math.floor(Date.now() / 1000)) {
@@ -518,8 +515,8 @@ class AuthenticationResponse {
    * @returns {Promise}
    */
   static verifyNonce (response) {
-    let octets = new Uint8Array(response.request.nonce)
-    let nonce = response.decoded.payload.nonce
+    const octets = new Uint8Array(response.request.nonce)
+    const nonce = response.decoded.payload.nonce
 
     if (!nonce) {
       throw new Error('Missing nonce in ID Token')
