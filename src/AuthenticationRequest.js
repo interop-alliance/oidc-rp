@@ -28,7 +28,7 @@ class AuthenticationRequest {
    * @returns {Promise}
    */
   static create (rp, options, session) {
-    const {provider, defaults, registration} = rp
+    const { provider, defaults, registration } = rp
 
     let issuer, endpoint, client, params
 
@@ -48,7 +48,7 @@ class AuthenticationRequest {
         // define basic elements of the request
         issuer = provider.configuration.issuer
         endpoint = provider.configuration.authorization_endpoint
-        client = { client_id: registration.client_id}
+        client = { client_id: registration.client_id }
         params = Object.assign(defaults.authenticate, client, options)
 
         // validate presence of required configuration and parameters
@@ -85,9 +85,9 @@ class AuthenticationRequest {
       // encoded state param, and replace state/nonce octets with encoded
       // digests
       .then(digests => {
-        let state = base64url(Buffer.from(digests[0]))
-        let nonce = base64url(Buffer.from(digests[1]))
-        let key = `${issuer}/requestHistory/${state}`
+        const state = base64url(Buffer.from(digests[0]))
+        const nonce = base64url(Buffer.from(digests[1]))
+        const key = `${issuer}/requestHistory/${state}`
 
         // store the request params for response validation
         // with serialized octet values for state and nonce
@@ -116,7 +116,7 @@ class AuthenticationRequest {
 
       // render the request URI and terminate the algorithm
       .then(() => {
-        let url = new URL(endpoint)
+        const url = new URL(endpoint)
         url.search = FormUrlEncoded.encode(params)
 
         return url.href
@@ -126,13 +126,13 @@ class AuthenticationRequest {
   static generateSessionKeys () {
     return crypto.subtle.generateKey(
       {
-        name: "RSASSA-PKCS1-v1_5",
+        name: 'RSASSA-PKCS1-v1_5',
         modulusLength: 2048,
         publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-        hash: { name: "SHA-256" },
+        hash: { name: 'SHA-256' }
       },
       true,
-      ["sign", "verify"]
+      ['sign', 'verify']
     )
       .then((keyPair) => {
         // returns a keypair object
@@ -142,7 +142,7 @@ class AuthenticationRequest {
         ])
       })
       .then(jwkPair => {
-        let [ publicJwk, privateJwk ] = jwkPair
+        const [publicJwk, privateJwk] = jwkPair
 
         return { public: publicJwk, private: privateJwk }
       })
@@ -159,25 +159,25 @@ class AuthenticationRequest {
 
     const keysToEncode = Object.keys(params).filter(key => !excludeParams.includes(key))
 
-    let payload = {}
+    const payload = {}
 
     keysToEncode.forEach(key => {
       payload[key] = params[key]
     })
 
-    let requestParamJwt = new JWT({
+    const requestParamJwt = new JWT({
       header: { alg: 'none' },
       payload
     }, { filter: false })
 
     return requestParamJwt.encode()
       .then(requestParamCompact => {
-        let newParams = {
-          scope: params['scope'],
-          client_id: params['client_id'],
-          response_type: params['response_type'],
+        const newParams = {
+          scope: params.scope,
+          client_id: params.client_id,
+          response_type: params.response_type,
           request: requestParamCompact,
-          state: params['state']
+          state: params.state
         }
 
         return newParams
