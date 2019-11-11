@@ -1,7 +1,7 @@
 # OpenID Connect Relying Party _(oidc-rp)_
 
-[![Build Status](https://travis-ci.org/interop/oidc-rp.svg?branch=master&style=flat-square)](https://travis-ci.org/interop/oidc-rp)
-[![npm version](https://badge.fury.io/js/%40interop%2Foidc-rp.svg)](https://badge.fury.io/js/%40interop%2Foidc-rp)
+[![Build Status](https://travis-ci.org/interop-alliance/oidc-rp.svg?branch=master&style=flat-square)](https://travis-ci.org/interop-alliance/oidc-rp)
+[![npm version](https://badge.fury.io/js/%40interop-alliance%2Foidc-rp.svg)](https://badge.fury.io/js/%40interop-alliance%2Foidc-rp)
 
 > OpenID Connect Relying Party for Node.js and the browser.
 
