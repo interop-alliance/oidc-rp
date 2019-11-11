@@ -94,14 +94,13 @@ class RelyingParty {
 
     // request the JWK Set if missing
     if (!jwks) {
-      return rp.jwks().then(() => rp)
+      await rp.jwks()
+      return rp
     }
 
     // otherwise import the JWK Set to webcrypto
-    return JWKSet.importKeys(jwks).then(jwks => {
-      rp.provider.jwks = jwks
-      return rp
-    })
+    rp.provider.jwks = await JWKSet.importKeys(jwks)
+    return rp
   }
 
   /**
@@ -116,21 +115,25 @@ class RelyingParty {
    * @param [idpId] {string} A tag identifying the provider used for looking up out-of-band registration data.
    * @returns {Promise<RelyingParty>} RelyingParty instance, registered.
    */
-  static register (issuer, registration, options, idpId, oobRegistration) {
+  static async register (issuer, registration, options, idpId, oobRegistration) {
     const rp = new RelyingParty({
       provider: { url: issuer },
       defaults: Object.assign({}, options.defaults),
       store: options.store
     })
 
-    return Promise.resolve()
-      .then(() => rp.discover())
-      .then(() => rp.jwks())
-      .then(() => {
-        assert(rp.provider.configuration, 'OpenID Configuration is not initialized.')
-        return rp.provider.configuration.registration_endpoint ? rp.register(registration) : rp.getRegistration(registration, idpId, oobRegistration)
-      })
-      .then(() => rp)
+    await rp.discover()
+    await rp.jwks()
+    assert(rp.provider.configuration,
+      'OpenID Configuration is not initialized.')
+
+    if (rp.provider.configuration.registration_endpoint) {
+      await rp.register(registration)
+    } else {
+      await rp.getRegistration(registration, idpId, oobRegistration)
+    }
+
+    return rp
   }
 
   validate () {
@@ -150,24 +153,20 @@ class RelyingParty {
    * @description Fetches the issuer's OpenID Configuration.
    * @returns {Promise<Object>} Resolves with the provider configuration response
    */
-  discover () {
-    try {
-      let issuer = this.provider.url
+  async discover () {
+    const issuer = this.provider.url
 
-      assert(issuer, 'RelyingParty provider must define "url"')
+    assert(issuer, 'RelyingParty provider must define "url"')
 
-      let url = new URL(issuer)
-      url.pathname = '.well-known/openid-configuration'
+    const url = new URL(issuer)
+    url.pathname = '.well-known/openid-configuration'
 
-      return fetch(url.toString())
-        .then(onHttpError('Error fetching openid configuration'))
-        .then(response => {
-          return response.json().then(json => this.provider.configuration = json)
-        })
+    const response = await fetch(url.toString())
+      .then(onHttpError('Error fetching openid configuration'))
 
-    } catch (error) {
-      return Promise.reject(error)
-    }
+    const json = await response.json()
+    this.provider.configuration = json
+    return json
   }
 
   /**
@@ -178,28 +177,24 @@ class RelyingParty {
    * @param options {Object}
    * @returns {Promise<Object>} Resolves with the registration response object
    */
-  register (options) {
-    try {
-      let configuration = this.provider.configuration
+  async register (options) {
+    const { configuration } = this.provider
 
-      assert(configuration, 'OpenID Configuration is not initialized.')
-      assert(configuration.registration_endpoint, 'OpenID Configuration is missing registration_endpoint.')
+    assert(configuration, 'OpenID Configuration is not initialized.')
+    assert(configuration.registration_endpoint,
+      'OpenID Configuration is missing registration_endpoint.')
 
-      let uri = configuration.registration_endpoint
-      let method = 'post'
-      let headers = new Headers({ 'Content-Type': 'application/json' })
-      let params = this.defaults.register
-      let body = JSON.stringify(Object.assign({}, params, options))
+    const uri = configuration.registration_endpoint
+    const method = 'post'
+    const headers = new Headers({ 'Content-Type': 'application/json' })
+    const params = this.defaults.register
+    const body = JSON.stringify(Object.assign({}, params, options))
 
-      return fetch(uri, {method, headers, body})
-        .then(onHttpError('Error registering client'))
-        .then(response => {
-          return response.json().then(json => this.registration = json)
-        })
-
-    } catch (error) {
-      return Promise.reject(error)
-    }
+    const response = await fetch(uri, { method, headers, body })
+      .then(onHttpError('Error registering client'))
+    const json = await response.json()
+    this.registration = json
+    return json
   }
 
   serialize () {
@@ -216,14 +211,9 @@ class RelyingParty {
    * @param idp {string} Key identifying which registration data should be retrieved.
    * @returns {Promise<Object>} Resolves with the registration response object.
    */
-  getRegistration (options, idp, oobRegistration) {
-    return Promise.resolve()
-      .then(() => {
-        return this.registration = oobRegistration.getRegistration(idp)
-      })
-      .catch(error => {
-        throw error
-      })
+  async getRegistration (options, idp, oobRegistration) {
+    this.registration = await oobRegistration.getRegistration(idp)
+    return this.registration
   }
 
   /**
@@ -232,27 +222,21 @@ class RelyingParty {
    * @description Promises the issuer's JWK Set.
    * @returns {Promise}
    */
-  jwks () {
-    try {
-      let configuration = this.provider.configuration
+  async jwks () {
+    const { configuration } = this.provider
 
-      assert(configuration, 'OpenID Configuration is not initialized.')
-      assert(configuration.jwks_uri, 'OpenID Configuration is missing jwks_uri.')
+    assert(configuration, 'OpenID Configuration is not initialized.')
+    assert(configuration.jwks_uri,
+      'OpenID Configuration is missing jwks_uri.')
 
-      let uri = configuration.jwks_uri
+    const uri = configuration.jwks_uri
 
-      return fetch(uri)
-        .then(onHttpError('Error resolving provider keys'))
-        .then(response => {
-          return response
-            .json()
-            .then(json => JWKSet.importKeys(json))
-            .then(jwks => this.provider.jwks = jwks)
-        })
-
-    } catch (error) {
-      return Promise.reject(error)
-    }
+    const response = await fetch(uri)
+      .then(onHttpError('Error resolving provider keys'))
+    const json = await response.json()
+    const jwks = await JWKSet.importKeys(json)
+    this.provider.jwks = jwks
+    return jwks
   }
 
   /**
@@ -264,7 +248,7 @@ class RelyingParty {
    * @param session {Session|Storage} req.session or localStorage
    * @returns {Promise<string>} Authn request URL
    */
-  createRequest (options, session) {
+  async createRequest (options, session) {
     return AuthenticationRequest.create(this, options, session || this.store)
   }
 
@@ -276,7 +260,7 @@ class RelyingParty {
    *
    * @returns {Promise<Session>}
    */
-  validateResponse (response, session = this.store) {
+  async validateResponse (response, session = this.store) {
     let options
 
     if (response.match(/^http(s?):\/\//)) {
@@ -301,29 +285,24 @@ class RelyingParty {
    * @param accessToken {string=} Optional access token from current user session for use against the User Info endpoint
    * @returns {Promise}
    */
-  userinfo (accessToken) {
-    try {
-      let configuration = this.provider.configuration
+  async userinfo (accessToken) {
+    const { configuration } = this.provider
 
-      assert(configuration, 'OpenID Configuration is not initialized.')
-      assert(configuration.userinfo_endpoint, 'OpenID Configuration is missing userinfo_endpoint.')
+    assert(configuration, 'OpenID Configuration is not initialized.')
+    assert(configuration.userinfo_endpoint, 'OpenID Configuration is missing userinfo_endpoint.')
 
-      accessToken = accessToken || this.store.access_token
-      assert(accessToken, 'Missing access token.')
+    accessToken = accessToken || this.store.access_token
+    assert(accessToken, 'Missing access token.')
 
-      let uri = configuration.userinfo_endpoint
-      let headers = new Headers({
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      })
+    const uri = configuration.userinfo_endpoint
+    const headers = new Headers({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`
+    })
 
-      return fetch(uri, {headers})
-        .then(onHttpError('Error fetching userinfo'))
-        .then(response => response.json())
-
-    } catch (error) {
-      return Promise.reject(error)
-    }
+    return fetch(uri, {headers})
+      .then(onHttpError('Error fetching userinfo'))
+      .then(response => response.json())
   }
 
   /**
@@ -467,7 +446,7 @@ class RelyingParty {
   }
 
   clearSession () {
-    let session = this.store
+    const session = this.store
 
     if (!session) { return }
 
@@ -480,7 +459,7 @@ class RelyingParty {
    *
    * @returns {Promise<PoPToken>}
    */
-  popTokenFor (uri, idToken) {
+  async popTokenFor (uri, idToken) {
     return PoPToken.issueFor(uri, idToken)
   }
 }

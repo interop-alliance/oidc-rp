@@ -52,21 +52,20 @@ describe('RelyingParty', () => {
         .should.be.rejectedWith(/OpenID Configuration is not initialized/)
     })
 
-    it('should request JWK Set if missing from argument', () => {
-      let jwkRequest = nock(providerUrl).get('/jwks').reply(200, providerJwks)
+    it('should request JWK Set if missing from argument', async () => {
+      const jwkRequest = nock(providerUrl).get('/jwks')
+        .reply(200, providerJwks)
 
-      let options = {
+      const options = {
         provider: {
           url: providerUrl,
           configuration: rpProviderConfig
         }
       }
 
-      return RelyingParty.from(options)
-        .then(rp => {
-          expect(rp.provider.jwks.keys[0].alg).to.equal('RS256')
-          expect(jwkRequest.isDone()).to.be.true()
-        })
+      const rp = await RelyingParty.from(options)
+      expect(rp.provider.jwks.keys[0].alg).to.equal('RS256')
+      expect(jwkRequest.isDone()).to.be.true()
     })
 
     it('should import JWK Set if defined in argument', () => {
