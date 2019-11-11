@@ -1,5 +1,5 @@
 {
-  "name": "@solid/oidc-rp",
+  "name": "@interop/oidc-rp",
   "version": "0.10.0",
   "description": "OpenID Connect Relying Party client library",
   "main": "./src/index.js",
@@ -21,7 +21,6 @@
     "type": "git",
     "url": "git+https://github.com/solid/oidc-rp.git"
   },
-  "author": "Solid Project",
   "contributors": [
     {
       "name": "Christian Smith",
