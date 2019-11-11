@@ -1,8 +1,7 @@
 # OpenID Connect Relying Party _(oidc-rp)_
 
-[![](https://img.shields.io/badge/project-Solid-7C4DFF.svg?style=flat-square)](https://github.com/solid/solid)
-[![Build Status](https://travis-ci.org/solid/oidc-rp.svg?branch=master&style=flat-square)](https://travis-ci.org/solid/oidc-rp)
-[![npm version](https://badge.fury.io/js/%40solid%2Foidc-rp.svg)](https://badge.fury.io/js/%40solid%2Foidc-rp)
+[![Build Status](https://travis-ci.org/interop/oidc-rp.svg?branch=master&style=flat-square)](https://travis-ci.org/interop/oidc-rp)
+[![npm version](https://badge.fury.io/js/%40interop%2Foidc-rp.svg)](https://badge.fury.io/js/%40interop%2Foidc-rp)
 
 > OpenID Connect Relying Party for Node.js and the browser.
 
