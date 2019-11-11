@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 /**
  * Dependencies
  */
@@ -5,7 +6,7 @@ const assert = require('assert')
 const fetch = require('node-fetch')
 const { URL } = require('whatwg-url')
 const Headers = fetch.Headers ? fetch.Headers : global.Headers
-const {JWKSet} = require('@solid/jose')
+const { JWKSet } = require('@solid/jose')
 const AuthenticationRequest = require('./AuthenticationRequest')
 const AuthenticationResponse = require('./AuthenticationResponse')
 const onHttpError = require('./onHttpError')
@@ -297,10 +298,10 @@ class RelyingParty {
     const uri = configuration.userinfo_endpoint
     const headers = new Headers({
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
+      Authorization: `Bearer ${accessToken}`
     })
 
-    return fetch(uri, {headers})
+    return fetch(uri, { headers })
       .then(onHttpError('Error fetching userinfo'))
       .then(response => response.json())
   }
@@ -364,14 +365,14 @@ class RelyingParty {
    */
   logoutRequest (options = {}) {
     const { id_token_hint, post_logout_redirect_uri, state } = options
-    let configuration
 
     assert(this.provider, 'OpenID Configuration is not initialized')
-    configuration = this.provider.configuration
+
+    const { configuration } = this.provider
     assert(configuration, 'OpenID Configuration is not initialized')
 
     if (!configuration.end_session_endpoint) {
-      console.log(`OpenId Configuration for ` +
+      console.log('OpenId Configuration for ' +
         `${configuration.issuer} is missing end_session_endpoint`)
       return null
     }
@@ -423,10 +424,10 @@ class RelyingParty {
       return Promise.resolve(undefined)
     }
 
-    let uri = configuration.end_session_endpoint
-    let method = 'get'
+    const uri = configuration.end_session_endpoint
+    const method = 'get'
 
-    return fetch(uri, {method, credentials: 'include'})
+    return fetch(uri, { method, credentials: 'include' })
       .then(onHttpError('Error logging out'))
       .then(() => this.clearSession())
 
@@ -451,16 +452,6 @@ class RelyingParty {
     if (!session) { return }
 
     delete session[SESSION_PRIVATE_KEY]
-  }
-
-  /**
-   * @param uri {string} Target Resource Server URI
-   * @param idToken {IDToken} ID Token to be embedded in the PoP token
-   *
-   * @returns {Promise<PoPToken>}
-   */
-  async popTokenFor (uri, idToken) {
-    return PoPToken.issueFor(uri, idToken)
   }
 }
 
