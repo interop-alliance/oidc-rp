@@ -1,4 +1,4 @@
-# OpenID Connect Relying Party _(@interop/oidc-rp)_
+# OpenID Connect Relying Party _(@interop-alliance/oidc-rp)_
 
 [![Build Status](https://travis-ci.org/interop-alliance/oidc-rp.svg?branch=master&style=flat-square)](https://travis-ci.org/interop-alliance/oidc-rp)
 [![npm version](https://badge.fury.io/js/%40interop-alliance%2Foidc-rp.svg)](https://badge.fury.io/js/%40interop-alliance%2Foidc-rp)
@@ -42,7 +42,7 @@
 ## Install
 
 ```bash
-$ npm install @interop/oidc-rp --save
+$ npm install @interop-alliance/oidc-rp --save
 ```
 
 ## Usage
@@ -50,7 +50,7 @@ $ npm install @interop/oidc-rp --save
 ### Node.js
 
 ```
-const RelyingParty = require('@interop/oidc-rp')
+const RelyingParty = require('@interop-alliance/oidc-rp')
 ```
 
 ### Browser
@@ -64,7 +64,7 @@ the library is exposed as a global var, `OIDC`.
 ### Install
 
 ```bash
-$ git clone git@github.com:solid/oidc-rp.git
+$ git clone https://github.com/interop-alliance/oidc-rp.git
 $ cd oidc-rp
 $ npm install
 ```
