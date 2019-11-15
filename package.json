@@ -15,7 +15,8 @@
     "dist": "webpack --progress",
     "prepare": "npm run dist && npm run test",
     "preversion": "npm test",
-    "test": "mocha --timeout=10000"
+    "standard": "standard src/",
+    "test": "npm run standard && mocha --timeout=10000"
   },
   "repository": {
     "type": "git",
