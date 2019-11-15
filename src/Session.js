@@ -48,30 +48,30 @@ class Session {
    * @returns {Session} RelyingParty Session object
    */
   static fromAuthResponse (response) {
-    const RelyingParty = require('./RelyingParty')  // import here due to circular dep
+    const RelyingParty = require('./RelyingParty') // import here due to circular dep
 
-    let idClaims = response.decoded && response.decoded.payload || {}
+    const idClaims = (response.decoded && response.decoded.payload) || {}
 
-    let { rp } = response
+    const { rp } = response
 
-    let registration = rp.registration
-    let rpAuthOptions = rp.defaults.authenticate || {}
+    const registration = rp.registration
+    const rpAuthOptions = rp.defaults.authenticate || {}
 
-    let credentialType = rpAuthOptions['credential_type'] ||
+    const credentialType = rpAuthOptions.credential_type ||
       rp.defaults.popToken ? 'pop_token' : 'access_token'
 
-    let sessionKey = response.session[RelyingParty.SESSION_PRIVATE_KEY]
+    const sessionKey = response.session[RelyingParty.SESSION_PRIVATE_KEY]
 
-    let options = {
+    const options = {
       credentialType,
       sessionKey,
       issuer: idClaims.iss,
       idClaims,
       authorization: {
-        client_id: registration['client_id'],
-        access_token: response.params['access_token'],
-        id_token: response.params['id_token'],
-        refresh_token: response.params['refresh_token']
+        client_id: registration.client_id,
+        access_token: response.params.access_token,
+        id_token: response.params.id_token,
+        refresh_token: response.params.refresh_token
       }
     }
 
@@ -92,18 +92,12 @@ class Session {
      *
      * @returns {Function<Promise<Response>>}
      */
-    return (url, options) => {
-      return Promise.resolve()
+    return async (url, options) => {
+      const result = this.hasCredentials()
+        ? await this.fetchWithCredentials(url, options)
+        : await fetch(url, options)
 
-        .then(() => {
-          if (this.hasCredentials()) {
-            return this.fetchWithCredentials(url, options)
-          } else {
-            return fetch(url, options)
-          }
-        })
-
-        .then(onHttpError('Error while fetching resource'))
+      return result.then(onHttpError('Error while fetching resource'))
     }
   }
 
@@ -114,13 +108,13 @@ class Session {
    *
    * @returns {Promise<string>}
    */
-  bearerTokenFor (url) {
+  async bearerTokenFor (url) {
     switch (this.credentialType) {
       case 'pop_token':
         return PoPToken.issueFor(url, this)
 
-      default:  // 'access_token' etc
-        return Promise.resolve(this.authorization[this.credentialType])
+      default: // 'access_token' etc
+        return this.authorization[this.credentialType]
     }
   }
 
@@ -132,9 +126,9 @@ class Session {
   hasCredentials () {
     switch (this.credentialType) {
       case 'pop_token':
-        return !!this.authorization['id_token']
+        return !!this.authorization.id_token
 
-      default:  // 'access_token' etc
+      default: // 'access_token' etc
         return !!this.authorization[this.credentialType]
     }
   }
@@ -147,16 +141,14 @@ class Session {
    *
    * @returns {Promise<Response>}
    */
-  fetchWithCredentials (url, options = {}) {
+  async fetchWithCredentials (url, options = {}) {
     options.headers = options.headers || {}
 
-    return this.bearerTokenFor(url)
+    const token = await this.bearerTokenFor(url)
 
-      .then(token => {
-        options.headers.authorization = `Bearer ${token}`
+    options.headers.authorization = `Bearer ${token}`
 
-        return fetch(url, options)
-      })
+    return fetch(url, options)
   }
 }
 
