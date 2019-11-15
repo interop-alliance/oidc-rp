@@ -71,24 +71,24 @@ describe('AuthenticationResponse', () => {
     })
 
     it('should parse query response', () => {
-      let response = { redirect: 'https://example.com/callback?code=1234' }
-      AuthenticationResponse.parseResponse(response)
-      response.params.should.eql({ code: '1234' })
-      response.mode.should.equal('query')
+      const response = { redirect: 'https://example.com/callback?code=1234' }
+      const { params, mode } = AuthenticationResponse.parseResponse(response)
+      params.should.eql({ code: '1234' })
+      mode.should.equal('query')
     })
 
     it('should parse fragment response', () => {
-      let response = { redirect: 'https://example.com/callback#code=1234' }
-      AuthenticationResponse.parseResponse(response)
-      response.params.should.eql({ code: '1234' })
-      response.mode.should.equal('fragment')
+      const response = { redirect: 'https://example.com/callback#code=1234' }
+      const { params, mode } = AuthenticationResponse.parseResponse(response)
+      params.should.eql({ code: '1234' })
+      mode.should.equal('fragment')
     })
 
     it('should parse form post response', () => {
-      let response = { body: 'code=1234' }
-      AuthenticationResponse.parseResponse(response)
-      response.params.should.eql({ code: '1234' })
-      response.mode.should.equal('form_post')
+      const response = { body: 'code=1234' }
+      const { params, mode } = AuthenticationResponse.parseResponse(response)
+      params.should.eql({ code: '1234' })
+      mode.should.equal('form_post')
     })
   })
 
@@ -161,11 +161,6 @@ describe('AuthenticationResponse', () => {
         .should.be
         .rejectedWith('Mismatching state parameter in authentication response')
     })
-
-    it('should resolve with its argument', () => {
-      return AuthenticationResponse.validateStateParam(response)
-        .should.be.eventually.equal(response)
-    })
   })
 
   /**
@@ -189,13 +184,6 @@ describe('AuthenticationResponse', () => {
         done()
       }
     })
-
-    it('should return its argument if no errors', () => {
-      let response = new AuthenticationResponse({})
-
-      AuthenticationResponse.errorResponse(response)
-        .should.equal(response)
-    })
   })
 
   /**
@@ -216,11 +204,6 @@ describe('AuthenticationResponse', () => {
         response.mode = 'query'
         AuthenticationResponse.validateResponseMode(response)
       }).to.throw('Invalid response mode')
-    })
-
-    it('should return its argument with valid response mode', () => {
-      AuthenticationResponse.validateResponseMode(response)
-        .should.equal(response)
     })
   })
 
@@ -269,12 +252,6 @@ describe('AuthenticationResponse', () => {
         AuthenticationResponse.validateResponseParams(response)
       }).to.throw('Missing token_type in authentication response')
     })
-
-    it('should return its argument with expected parameters', () => {
-      AuthenticationResponse
-        .validateResponseParams(response)
-        .should.equal(response)
-    })
   })
 
   /**
@@ -314,17 +291,15 @@ describe('AuthenticationResponse', () => {
       }
     })
 
-    it('should not exchange code unless response type is exactly `code`', () => {
-      let tokenRequest = nock(providerUrl).post('/token')
+    it('should not exchange code unless response type is exactly `code`', async () => {
+      const tokenRequest = nock(providerUrl).post('/token')
         .reply(200)
 
       response.request['response_type'] = 'code id_token token'
 
-      return AuthenticationResponse.exchangeAuthorizationCode(response)
-        .then(res => {
-          expect(tokenRequest.isDone()).to.be.false()
-          expect(res).to.equal(response)  // response is just passed through
-        })
+      const result = await AuthenticationResponse.exchangeAuthorizationCode(response)
+      expect(tokenRequest.isDone()).to.be.false()
+      expect(result).to.be.undefined()
     })
 
     it('should exchange the code if response type is exactly `code`')
@@ -383,18 +358,16 @@ describe('AuthenticationResponse', () => {
         })
     })
 
-    it('should authenticate client with HTTP Basic credentials', () => {
-      let requiredHeaders = {
+    it('should authenticate client with HTTP Basic credentials', async () => {
+      const requiredHeaders = {
         'authorization': 'Basic Y2xpZW50MTIzOnMzM2tyZXQ='
       }
-      let tokenRequest = nock(providerUrl, { reqheaders: requiredHeaders })
+      const tokenRequest = nock(providerUrl, { reqheaders: requiredHeaders })
         .post('/token')
         .reply(200, tokenResponse)
 
-      return AuthenticationResponse.exchangeAuthorizationCode(response)
-        .then(() => {
-          expect(tokenRequest.isDone()).to.be.true()
-        })
+      await AuthenticationResponse.exchangeAuthorizationCode(response)
+      expect(tokenRequest.isDone()).to.be.true()
     })
 
     it('should authenticate client with form POST credentials', () => {
@@ -412,20 +385,6 @@ describe('AuthenticationResponse', () => {
 
     it('should authenticate client with JWT')
 
-    it('should validate the presence of access_token in token response', () => {
-      let tokenResponse = {
-        'token_type': 'bearer',
-        'id_token': '1dt0ken'
-      }
-
-      let tokenRequest = nock(providerUrl)
-        .post('/token')
-        .reply(200, tokenResponse)
-
-      return AuthenticationResponse.exchangeAuthorizationCode(response)
-        .should.be.rejectedWith('Missing access_token in token response')
-    })
-
     it('should validate the presence of token_type in token response', () => {
       let tokenResponse = {
         'access_token': '4ccesst0ken',
@@ -437,26 +396,10 @@ describe('AuthenticationResponse', () => {
         .reply(200, tokenResponse)
 
       return AuthenticationResponse.exchangeAuthorizationCode(response)
-        .should.be.rejectedWith('Missing token_type in token response')
-  })
-
-    it('should validate the presence of id_token in token response', () => {
-      let tokenResponse = {
-        'access_token': '4ccesst0ken',
-        'token_type': 'bearer'
-      }
-
-      let tokenRequest = nock(providerUrl)
-        .post('/token')
-        .reply(200, tokenResponse)
-
-      return AuthenticationResponse.exchangeAuthorizationCode(response)
-        .should.be.rejectedWith('Missing id_token in token response')
+        .should.be.rejectedWith('Missing token_type in token response.')
     })
 
     it('should include token response in response params')
-
-    it('should return its argument')
 
     it('should reject on an http error', done => {
       let providerUrl = 'https://notfound'
@@ -483,27 +426,21 @@ describe('AuthenticationResponse', () => {
    * decodeIDToken
    */
   describe('decodeIDToken', () => {
-    let response, jwt
+    let jwt
 
     beforeEach(() => {
       jwt = 'eyJhbGciOiJSUzI1NiIsImtpZCI6InI0bmQwbWJ5dDNzIn0.eyJpc3MiOiJodHRwczovL2ZvcmdlLmFudmlsLmlvIn0.FMer-lRR4Q4BVivMc9sl-jF3c-QWEenlH2pcW9oXTsiPRSEzc7lgPEryuXTimoToSKwWFgVpnjXKnmBaTaPVLpuRUMwGUeIUdQu0bQC-XEo-TKlwlqtUgelQcF2viEQwxU04UQaXWBh9ZDTIOutfXcjyhEPiMfCFLxT_aotR0zipmAi825lF1qBmxKrCv4c_9_46ACuaeuET6t0XvcAMDf3fjkEdw_0KPN2wnAlp2AwPP05D8Nwn8NqDAlljdN7bjnO99uJvhNWbvZgBYfhNXkMeDVJcukv0j3Cz6LCgedbXdX0rzJv_4qkO6l-LU9QeK1s0kwHfRUIWoa0TLJ4FtQ'
-      response = { params: { id_token: jwt } }
     })
 
     it('should decode id_token response parameter', () => {
-      AuthenticationResponse.decodeIDToken(response).decoded
-        .should.be.instanceof(JWT)
+      const decoded = AuthenticationResponse.decodeIDToken(jwt)
+      decoded.should.be.instanceof(JWT)
     })
 
     it('should throw an error on invalid id_token', () => {
-      response.params.id_token = 'inva1id'
       expect(() => {
-        AuthenticationResponse.decodeIDToken(response)
+        AuthenticationResponse.decodeIDToken('inva1id')
       }).to.throw('Error decoding ID Token')
-    })
-
-    it('should return its argument', () => {
-      AuthenticationResponse.decodeIDToken(response).should.equal(response)
     })
   })
 
@@ -535,10 +472,6 @@ describe('AuthenticationResponse', () => {
         response.decoded.payload.iss = 'https://example.com'
         AuthenticationResponse.validateIssuer(response)
       }).to.throw('Mismatching issuer in ID Token')
-    })
-
-    it('should return its argument', () => {
-      AuthenticationResponse.validateIssuer(response).should.equal(response)
     })
   })
 
@@ -591,10 +524,6 @@ describe('AuthenticationResponse', () => {
         AuthenticationResponse.validateAudience(response)
       }).to.throw('Mismatching azp claim in id_token')
     })
-
-    it('should return its argument', () => {
-      AuthenticationResponse.validateAudience(response).should.equal(response)
-    })
   })
 
   /**
@@ -615,34 +544,30 @@ describe('AuthenticationResponse', () => {
       }
     })
 
-    it('should request keys from provider if necessary', () => {
-      return AuthenticationResponse.resolveKeys(response)
-        .then(res => {
-          expect(response.rp.jwks).to.have.been.called()
-          expect(res).to.equal(response)
-        })
+    it('should request keys from provider if necessary', async () => {
+      await AuthenticationResponse.resolveKeys(response)
+      expect(response.rp.jwks).to.have.been.called()
     })
 
-    it('should use already imported keys if available', () => {
-      return JWKSet.importKeys(providerJwks)
-        .then(jwks => { response.rp.provider.jwks = jwks })
-
-        .then(() => AuthenticationResponse.resolveKeys(response))
-        .then(res => {
-          expect(response.rp.jwks).to.not.have.been.called()
-          expect(res).to.equal(response)
-        })
+    it('should use already imported keys if available', async () => {
+      const jwks = await JWKSet.importKeys(providerJwks)
+      response.rp.provider.jwks = jwks
+      await AuthenticationResponse.resolveKeys(response)
+      expect(response.rp.jwks).to.not.have.been.called()
     })
 
-    it('should throw an error if token resolve keys operation fails', done => {
+    it('should throw an error if token resolve keys operation fails', async () => {
       response.decoded.resolveKeys = sinon.stub()
         .withArgs(providerJwks).returns(false)
 
-      AuthenticationResponse.resolveKeys(response)
-        .catch(err => {
-          expect(err.message).to.match(/Cannot resolve signing key for ID Token/)
-          done()
-        })
+      let error
+      try {
+        await AuthenticationResponse.resolveKeys(response)
+      } catch (thrownError) {
+        error = thrownError
+      }
+      expect(error).to.exist()
+      expect(error.message).to.match(/Cannot resolve signing key for ID Token/)
     })
   })
 
@@ -683,22 +608,22 @@ describe('AuthenticationResponse', () => {
       }
     })
 
-    it('should throw with mismatching signing algorithm', () => {
-      expect(() => {
-        response.rp.registration['id_token_signed_response_alg'] = 'HS256'
-        AuthenticationResponse.verifySignature(response)
-      }).to.throw('Expected ID Token to be signed with HS256')
+    it('should throw with mismatching signing algorithm', async () => {
+      response.rp.registration['id_token_signed_response_alg'] = 'HS256'
+      let error
+      try {
+        await AuthenticationResponse.verifySignature(response)
+      } catch (thrown) {
+        error = thrown
+      }
+      expect(error).to.exist()
+      expect(error.message).to.match(/Expected ID Token to be signed with HS256/)
     })
 
     it('should reject with invalid ID Token signature', () => {
       response.decoded.signature += 'wrong'
       return AuthenticationResponse.verifySignature(response)
         .should.be.rejectedWith('Invalid ID Token signature')
-    })
-
-    it('should resolve its argument', () => {
-      return AuthenticationResponse.verifySignature(response)
-        .should.eventually.equal(response)
     })
   })
 
@@ -745,10 +670,6 @@ describe('AuthenticationResponse', () => {
         AuthenticationResponse.validateExpires(response)
       }).to.throw('Expired ID Token')
     })
-
-    it('should return its argument', () => {
-      AuthenticationResponse.validateExpires(response).should.equal(response)
-    })
   })
 
   /**
@@ -786,11 +707,16 @@ describe('AuthenticationResponse', () => {
       }
     })
 
-    it('should throw with missing nonce claim', () => {
+    it('should throw with missing nonce claim', async () => {
       delete response.decoded.payload.nonce
-      expect(() => {
-        AuthenticationResponse.verifyNonce(response)
-      }).to.throw('Missing nonce in ID Token')
+      let error
+      try {
+        await AuthenticationResponse.verifyNonce(response)
+      } catch (thrown) {
+        error = thrown
+      }
+      expect(error).to.exist()
+      expect(error.message).to.match(/Missing nonce in ID Token/)
     })
 
     it('should reject with mismatching nonce claim', () => {
@@ -798,11 +724,6 @@ describe('AuthenticationResponse', () => {
       return AuthenticationResponse.verifyNonce(response)
         .should.be
         .rejectedWith('Mismatching nonce in ID Token')
-    })
-
-    it('should resolve with its argument', () => {
-      return AuthenticationResponse.verifyNonce(response)
-        .should.be.eventually.equal(response)
     })
   })
 

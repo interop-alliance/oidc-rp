@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 /**
  * Dependencies
  */
@@ -41,37 +42,48 @@ class AuthenticationResponse {
    * @description
    * Authentication response validation.
    *
-   * @param {string|Object} response
+   * @param {string|Object} data
    *
    * @returns {Promise<Session>}
    */
-  static validateResponse (response) {
-    return Promise.resolve(response)
-      .then(this.parseResponse)
-      .then(this.errorResponse)
-      .then(this.matchRequest)
-      .then(this.validateStateParam)
-      .then(this.validateResponseMode)
-      .then(this.validateResponseParams)
-      .then(this.exchangeAuthorizationCode)
-      .then(this.validateIDToken)
-      .then(Session.fromAuthResponse)
+  static async validateResponse (data) {
+    let response = this.parseResponse(data)
+
+    // If response contains an error object, throw it
+    this.errorResponse(response)
+
+    response = this.matchRequest(response)
+
+    await this.validateStateParam(response)
+    this.validateResponseMode(response)
+    this.validateResponseParams(response)
+
+    const tokenResponse = await this.exchangeAuthorizationCode(response)
+    if (tokenResponse) {
+      // add access_token / id_token, if appropriate
+      Object.assign(response.params, tokenResponse)
+    }
+
+    response = await this.validateIDToken(response)
+
+    return Session.fromAuthResponse(response)
   }
 
   /**
    * parseResponse
    *
-   * @param {object} response
-   *
-   * @returns {object}
+   * @param responseData {object}
+   * @returns {{mode: string, params: object}}
    */
-  static parseResponse (response) {
-    const { redirect, body } = response
+  static parseResponse (responseData) {
+    const { redirect, body } = responseData
 
     // response must be either a redirect uri or request body, but not both
     if ((redirect && body) || (!redirect && !body)) {
       throw new HttpError(400, 'Invalid response mode')
     }
+
+    const response = {}
 
     // parse redirect uri
     if (redirect) {
@@ -136,8 +148,8 @@ class AuthenticationResponse {
   /**
    * matchRequest
    *
-   * @param {Object} response
-   * @returns {Promise}
+   * @param {object} response
+   * @returns {object}
    */
   static matchRequest (response) {
     const { rp, params, session } = response
@@ -146,7 +158,7 @@ class AuthenticationResponse {
 
     if (!state) {
       throw new Error(
-        'Missing state parameter in authentication response')
+        'Missing state parameter in authentication response.')
     }
 
     const key = `${issuer}/requestHistory/${state}`
@@ -154,7 +166,7 @@ class AuthenticationResponse {
 
     if (!request) {
       throw new Error(
-        'Mismatching state parameter in authentication response')
+        'Mismatching state parameter in authentication response.')
     }
 
     response.request = JSON.parse(request)
@@ -164,42 +176,37 @@ class AuthenticationResponse {
   /**
    * validateStateParam
    *
-   * @param {Object} response
+   * @param {object} response
    * @returns {Promise}
    */
-  static validateStateParam (response) {
+  static async validateStateParam (response) {
     const octets = new Uint8Array(response.request.state)
     const encoded = response.params.state
 
-    return crypto.subtle.digest({ name: 'SHA-256' }, octets).then(digest => {
-      if (encoded !== base64url(Buffer.from(digest))) {
-        throw new Error(
-          'Mismatching state parameter in authentication response')
-      }
-
-      return response
-    })
-  }
-
-  /**
-   * validateResponseMode
-   *
-   * @param {Object} response
-   * @returns {Promise}
-   */
-  static validateResponseMode (response) {
-    if (response.request.response_type !== 'code' && response.mode === 'query') {
-      throw new Error('Invalid response mode')
+    const digest = await crypto.subtle.digest({ name: 'SHA-256' }, octets)
+    if (encoded !== base64url(Buffer.from(digest))) {
+      throw new Error(
+        'Mismatching state parameter in authentication response.')
     }
 
     return response
   }
 
   /**
-   * validateResponseParams
+   * validateResponseMode
    *
    * @param {Object} response
-   * @returns {Promise}
+   */
+  static validateResponseMode (response) {
+    if (response.request.response_type !== 'code' && response.mode === 'query') {
+      throw new Error('Invalid response mode.')
+    }
+  }
+
+  /**
+   * validateResponseParams
+   *
+   * @param {object} response
    */
   static validateResponseParams (response) {
     const { request, params } = response
@@ -223,23 +230,21 @@ class AuthenticationResponse {
       assert(params.token_type,
         'Missing token_type in authentication response')
     }
-
-    return response
   }
 
   /**
    * exchangeAuthorizationCode
    *
-   * @param {Object} response
-   * @returns {Promise} response object
+   * @param {object} response
+   * @returns {undefined|{id_token:*, access_token:*, token_type:*}}
    */
-  static exchangeAuthorizationCode (response) {
+  static async exchangeAuthorizationCode (response) {
     const { rp, params, request } = response
     const code = params.code
 
     // only exchange the authorization code when the response type is "code"
     if (!code || request.response_type !== 'code') {
-      return Promise.resolve(response)
+      return
     }
 
     const { provider, registration } = rp
@@ -248,9 +253,8 @@ class AuthenticationResponse {
 
     // verify the client is not public
     if (!secret) {
-      return Promise.reject(new Error(
-        'Client cannot exchange authorization code because ' +
-          'it is not a confidential client'))
+      throw new Error(
+        'Client cannot exchange authorization code because it is not a confidential client.')
     }
 
     // initialize token request arguments
@@ -275,7 +279,8 @@ class AuthenticationResponse {
 
     // client secret basic authentication
     if (authMethod === 'client_secret_basic') {
-      const credentials = Buffer.from(`${id}:${secret}`).toString('base64')
+      const credentials = Buffer.from(`${id}:${secret}`)
+        .toString('base64')
       headers.set('Authorization', `Basic ${credentials}`)
     }
 
@@ -293,52 +298,49 @@ class AuthenticationResponse {
 
     // make the token request
 
-    return fetch(endpoint, { method, headers, body })
+    const tokenResponse = await fetch(endpoint, { method, headers, body })
       .then(onHttpError('Error exchanging authorization code'))
-      .then(tokenResponse => tokenResponse.json())
-      .then(tokenResponse => {
-        assert(tokenResponse.access_token,
-          'Missing access_token in token response')
 
-        assert(tokenResponse.token_type,
-          'Missing token_type in token response')
+    const { access_token, token_type, id_token } = await tokenResponse.json()
 
-        assert(tokenResponse.id_token,
-          'Missing id_token in token response')
+    // assert(access_token, 'Missing access_token in token response')
 
-        // anything else?
+    assert(token_type, 'Missing token_type in token response.')
 
-        // IS THIS THE RIGHT THING TO DO HERE?
-        response.params = Object.assign(response.params, tokenResponse)
-        return response
-      })
+    // assert(id_token, 'Missing id_token in token response')
+
+    return { access_token, token_type, id_token }
   }
 
   /**
    * validateIDToken
    *
-   * @param {Object} response
-   * @returns {Promise}
+   * @param {object} response, with decoded ID Token.
    */
-  static validateIDToken (response) {
+  static async validateIDToken (response) {
+    const idToken = response.params.id_token
     // only validate the ID Token if present in the response
-    if (!response.params.id_token) {
-      return Promise.resolve(response)
+    if (!idToken) {
+      return response
     }
 
-    return Promise.resolve(response)
-      .then(AuthenticationResponse.decryptIDToken)
-      .then(AuthenticationResponse.decodeIDToken)
-      .then(AuthenticationResponse.validateIssuer)
-      .then(AuthenticationResponse.validateAudience)
-      .then(AuthenticationResponse.resolveKeys)
-      .then(AuthenticationResponse.verifySignature)
-      .then(AuthenticationResponse.validateExpires)
-      .then(AuthenticationResponse.verifyNonce)
-      .then(AuthenticationResponse.validateAcr)
-      .then(AuthenticationResponse.validateAuthTime)
-      .then(AuthenticationResponse.validateAccessTokenHash)
-      .then(AuthenticationResponse.validateAuthorizationCodeHash)
+    // await this.decryptIDToken(response)
+    response.decoded = this.decodeIDToken(idToken)
+
+    this.validateIssuer(response)
+    this.validateAudience(response)
+    await this.resolveKeys(response)
+    await this.verifySignature(response)
+    this.validateExpires(response)
+    await this.verifyNonce(response)
+
+    // TODO
+    // this.validateAcr()
+    // this.validateAuthTime()
+    // this.validateAccessTokenHash()
+    // this.validateAuthorizationCodeHash()
+
+    return response
   }
 
   /**
@@ -347,9 +349,9 @@ class AuthenticationResponse {
    * @param {Object} response
    * @returns {Promise}
    */
-  static decryptIDToken (response) {
-    // TODO
-    return Promise.resolve(response)
+  static async decryptIDToken (response) {
+    // TODO (not currently supported)
+    return response
   }
 
   /**
@@ -358,32 +360,28 @@ class AuthenticationResponse {
    * Note: If the `id_token` is not present in params, this method does not
    * get called (short-circuited in `validateIDToken()`).
    *
-   * @param response {AuthenticationResponse}
-   * @param response.params {object}
-   * @param [response.params.id_token] {string} IDToken encoded as a JWT
+   * @param idToken {string}
    *
-   * @returns {AuthenticationResponse} Chainable
+   * @returns {JWT}
    */
-  static decodeIDToken (response) {
-    const jwt = response.params.id_token
-
+  static decodeIDToken (idToken) {
+    let decoded
     try {
-      response.decoded = IDToken.decode(jwt)
+      decoded = IDToken.decode(idToken)
     } catch (decodeError) {
       const error = new HttpError(400, 'Error decoding ID Token')
       error.cause = decodeError
-      error.info = { id_token: jwt }
+      error.info = { id_token: idToken }
       throw error
     }
 
-    return response
+    return decoded
   }
 
   /**
    * validateIssuer
    *
-   * @param {Object} response
-   * @returns {Promise}
+   * @param {object} response
    */
   static validateIssuer (response) {
     const configuration = response.rp.provider.configuration
@@ -391,7 +389,7 @@ class AuthenticationResponse {
 
     // validate issuer of token matches this relying party's provider
     if (payload.iss !== configuration.issuer) {
-      throw new Error('Mismatching issuer in ID Token')
+      throw new Error('Mismatching issuer in ID Token.')
     }
 
     return response
@@ -401,7 +399,6 @@ class AuthenticationResponse {
    * validateAudience
    *
    * @param {Object} response
-   * @returns {Promise}
    */
   static validateAudience (response) {
     const registration = response.rp.registration
@@ -426,15 +423,12 @@ class AuthenticationResponse {
     if (azp && azp !== registration.client_id) {
       throw new Error('Mismatching azp claim in id_token')
     }
-
-    return response
   }
 
   /**
    * resolveKeys
-   *
-   * @param {Object} response
-   * @returns {Promise}
+   * Validates that the provider keys resolve and match the jwk,
+   * throws error otherwise.
    */
   static async resolveKeys (response) {
     const rp = response.rp
@@ -451,14 +445,14 @@ class AuthenticationResponse {
     }
 
     if (decoded.resolveKeys(jwks)) {
-      return response
+      return
     }
 
     if (!isFreshJwks) {
       // The OP JWK Set cached by the RP may be stale due to key rotation by the OP.
       jwks = await rp.jwks()
       if (decoded.resolveKeys(jwks)) {
-        return response
+        return
       }
     }
 
@@ -468,10 +462,9 @@ class AuthenticationResponse {
   /**
    * verifySignature
    *
-   * @param {Object} response
-   * @returns {Promise}
+   * @param {object} response
    */
-  static verifySignature (response) {
+  static async verifySignature (response) {
     const alg = response.decoded.header.alg
     const registration = response.rp.registration
     const expectedAlgorithm = registration.id_token_signed_response_alg || 'RS256'
@@ -482,30 +475,23 @@ class AuthenticationResponse {
         `Expected ID Token to be signed with ${expectedAlgorithm}`)
     }
 
-    return response.decoded.verify().then(verified => {
-      if (!verified) {
-        throw new Error('Invalid ID Token signature')
-      }
-
-      return response
-    })
+    if (!(await response.decoded.verify())) {
+      throw new Error('Invalid ID Token signature.')
+    }
   }
 
   /**
    * validateExpires
    *
-   * @param {Object} response
-   * @returns {Promise}
+   * @param {object} response
    */
   static validateExpires (response) {
     const exp = response.decoded.payload.exp
 
     // validate expiration of token
     if (exp <= Math.floor(Date.now() / 1000)) {
-      throw new Error('Expired ID Token')
+      throw new Error('Expired ID Token.')
     }
-
-    return response
   }
 
   /**
@@ -514,21 +500,18 @@ class AuthenticationResponse {
    * @param {Object} response
    * @returns {Promise}
    */
-  static verifyNonce (response) {
+  static async verifyNonce (response) {
     const octets = new Uint8Array(response.request.nonce)
     const nonce = response.decoded.payload.nonce
 
     if (!nonce) {
-      throw new Error('Missing nonce in ID Token')
+      throw new Error('Missing nonce in ID Token.')
     }
 
-    return crypto.subtle.digest({ name: 'SHA-256' }, octets).then(digest => {
-      if (nonce !== base64url(Buffer.from(digest))) {
-        throw new Error('Mismatching nonce in ID Token')
-      }
-
-      return response
-    })
+    const digest = await crypto.subtle.digest({ name: 'SHA-256' }, octets)
+    if (nonce !== base64url(Buffer.from(digest))) {
+      throw new Error('Mismatching nonce in ID Token.')
+    }
   }
 
   /**
