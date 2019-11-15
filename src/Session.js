@@ -92,18 +92,12 @@ class Session {
      *
      * @returns {Function<Promise<Response>>}
      */
-    return (url, options) => {
-      return Promise.resolve()
+    return async (url, options) => {
+      const result = this.hasCredentials()
+        ? await this.fetchWithCredentials(url, options)
+        : await fetch(url, options)
 
-        .then(() => {
-          if (this.hasCredentials()) {
-            return this.fetchWithCredentials(url, options)
-          } else {
-            return fetch(url, options)
-          }
-        })
-
-        .then(onHttpError('Error while fetching resource'))
+      return result.then(onHttpError('Error while fetching resource'))
     }
   }
 
@@ -114,13 +108,13 @@ class Session {
    *
    * @returns {Promise<string>}
    */
-  bearerTokenFor (url) {
+  async bearerTokenFor (url) {
     switch (this.credentialType) {
       case 'pop_token':
         return PoPToken.issueFor(url, this)
 
       default: // 'access_token' etc
-        return Promise.resolve(this.authorization[this.credentialType])
+        return this.authorization[this.credentialType]
     }
   }
 
@@ -147,16 +141,14 @@ class Session {
    *
    * @returns {Promise<Response>}
    */
-  fetchWithCredentials (url, options = {}) {
+  async fetchWithCredentials (url, options = {}) {
     options.headers = options.headers || {}
 
-    return this.bearerTokenFor(url)
+    const token = await this.bearerTokenFor(url)
 
-      .then(token => {
-        options.headers.authorization = `Bearer ${token}`
+    options.headers.authorization = `Bearer ${token}`
 
-        return fetch(url, options)
-      })
+    return fetch(url, options)
   }
 }
 
