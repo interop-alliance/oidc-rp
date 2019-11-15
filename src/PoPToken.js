@@ -1,9 +1,9 @@
 'use strict'
 
 const { URL } = require('whatwg-url')
-const {JWT, JWK} = require('@solid/jose')
+const { JWT, JWK } = require('@solid/jose')
 
-const DEFAULT_MAX_AGE = 3600  // Default token expiration, in seconds
+const DEFAULT_MAX_AGE = 3600 // Default token expiration, in seconds
 
 class PoPToken extends JWT {
   /**
@@ -16,7 +16,7 @@ class PoPToken extends JWT {
    *
    * @returns {Promise<string>} PoPToken, encoded as compact JWT
    */
-  static issueFor (resourceServerUri, session) {
+  static async issueFor (resourceServerUri, session) {
     if (!resourceServerUri) {
       throw new Error('Cannot issue PoPToken - missing resource server URI')
     }
@@ -29,22 +29,16 @@ class PoPToken extends JWT {
       throw new Error('Cannot issue PoPToken - missing id token')
     }
 
-    let jwk = JSON.parse(session.sessionKey)
+    const jwk = JSON.parse(session.sessionKey)
+    const options = {
+      aud: (new URL(resourceServerUri)).origin,
+      key: (await JWK.importKey(jwk)),
+      iss: session.authorization.client_id,
+      id_token: session.authorization.id_token
+    }
+    const jwt = await PoPToken.issue(options)
 
-    return JWK.importKey(jwk)
-      .then(importedSessionJwk => {
-        let options = {
-          aud: (new URL(resourceServerUri)).origin,
-          key: importedSessionJwk,
-          iss: session.authorization.client_id,
-          id_token: session.authorization.id_token
-        }
-
-        return PoPToken.issue(options)
-      })
-      .then(jwt => {
-        return jwt.encode()
-      })
+    return jwt.encode()
   }
 
   /**
@@ -66,18 +60,18 @@ class PoPToken extends JWT {
    * @returns {PoPToken} Proof of Possession Token (JWT instance)
    */
   static issue (options) {
-    let { aud, iss, key } = options
+    const { aud, iss, key } = options
 
-    let alg = key.alg
-    let iat = options.iat || Math.floor(Date.now() / 1000)
-    let max = options.max || DEFAULT_MAX_AGE
+    const alg = key.alg
+    const iat = options.iat || Math.floor(Date.now() / 1000)
+    const max = options.max || DEFAULT_MAX_AGE
 
-    let exp = iat + max  // token expiration
+    const exp = iat + max // token expiration
 
-    let header = { alg }
-    let payload = { iss, aud, exp, iat, id_token: options.id_token, token_type: 'pop' }
+    const header = { alg }
+    const payload = { iss, aud, exp, iat, id_token: options.id_token, token_type: 'pop' }
 
-    let jwt = new PoPToken({ header, payload, key: key.cryptoKey }, { filter: false })
+    const jwt = new PoPToken({ header, payload, key: key.cryptoKey }, { filter: false })
 
     return jwt
   }
