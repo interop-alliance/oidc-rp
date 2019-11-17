@@ -535,16 +535,21 @@ describe('RelyingParty', () => {
   describe('validateResponse', () => {
     after(() => {
       AuthenticationResponse.validateResponse.restore()
+      AuthenticationResponse.parseResponse.restore()
     })
 
     it('should create an AuthenticationResponse instance', () => {
       const session = {}
       sinon.stub(AuthenticationResponse, 'validateResponse').resolves(session)
 
-      let store = {}
-      let rp = new RelyingParty({ store })
+      const store = {}
+      const rp = new RelyingParty({ store })
 
-      let uri = 'https://app.example.com/callback'
+      const mode = 'query'
+      const params = {}
+      sinon.stub(AuthenticationResponse, 'parseResponse').resolves({ mode, params })
+
+      const uri = 'https://app.example.com/callback'
 
       return rp.validateResponse(uri)
         .then(res => {

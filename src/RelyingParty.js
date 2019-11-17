@@ -262,13 +262,17 @@ class RelyingParty {
    * @returns {Promise<Session>}
    */
   async validateResponse (response, session = this.store) {
-    let options
+    let redirect, body
 
     if (response.match(/^http(s?):\/\//)) {
-      options = { rp: this, redirect: response, session }
+      redirect = response
     } else {
-      options = { rp: this, body: response, session }
+      body = response
     }
+
+    const { params, mode } = AuthenticationResponse.parseResponse({ redirect, body })
+
+    const options = { rp: this, session, params, mode }
 
     const authResponse = new AuthenticationResponse(options)
 
