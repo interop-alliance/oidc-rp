@@ -133,8 +133,8 @@ describe('AuthenticationResponse', () => {
     })
 
     it('should deserialize the matched request', () => {
-      AuthenticationResponse.matchRequest(response).request
-        .should.eql({ scope: 'openid' })
+      const request = AuthenticationResponse.matchRequest(response)
+      request.should.eql({ scope: 'openid' })
     })
   })
 

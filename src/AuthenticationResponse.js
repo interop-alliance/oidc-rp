@@ -42,17 +42,15 @@ class AuthenticationResponse {
    * @description
    * Authentication response validation.
    *
-   * @param {string|Object} data
+   * @param {AuthenticationResponse} response
    *
    * @returns {Promise<Session>}
    */
-  static async validateResponse (data) {
-    let response = this.parseResponse(data)
-
+  static async validateResponse (response) {
     // If response contains an error object, throw it
     this.errorResponse(response)
 
-    response = this.matchRequest(response)
+    response.request = this.matchRequest(response)
 
     await this.validateStateParam(response)
     this.validateResponseMode(response)
@@ -64,7 +62,7 @@ class AuthenticationResponse {
       Object.assign(response.params, tokenResponse)
     }
 
-    response = await this.validateIDToken(response)
+    await this.validateIDToken(response)
 
     return Session.fromAuthResponse(response)
   }
@@ -72,18 +70,18 @@ class AuthenticationResponse {
   /**
    * parseResponse
    *
-   * @param responseData {object}
+   * @param [redirect] {string} Redirect uri
+   * @param [body] {object} Parsed request body
+   *
    * @returns {{mode: string, params: object}}
    */
-  static parseResponse (responseData) {
-    const { redirect, body } = responseData
-
+  static parseResponse ({ redirect, body }) {
     // response must be either a redirect uri or request body, but not both
     if ((redirect && body) || (!redirect && !body)) {
       throw new HttpError(400, 'Invalid response mode')
     }
 
-    const response = {}
+    let params, mode
 
     // parse redirect uri
     if (redirect) {
@@ -95,23 +93,23 @@ class AuthenticationResponse {
       }
 
       if (search) {
-        response.params = FormUrlEncoded.decode(search.substring(1))
-        response.mode = 'query'
+        params = FormUrlEncoded.decode(search.substring(1))
+        mode = 'query'
       }
 
       if (hash) {
-        response.params = FormUrlEncoded.decode(hash.substring(1))
-        response.mode = 'fragment'
+        params = FormUrlEncoded.decode(hash.substring(1))
+        mode = 'fragment'
       }
     }
 
     // parse request form body
     if (body) {
-      response.params = FormUrlEncoded.decode(body)
-      response.mode = 'form_post'
+      params = FormUrlEncoded.decode(body)
+      mode = 'form_post'
     }
 
-    return response
+    return { params, mode }
   }
 
   /**
@@ -149,7 +147,8 @@ class AuthenticationResponse {
    * matchRequest
    *
    * @param {object} response
-   * @returns {object}
+   *
+   * @returns {object} Original request object, loaded from storage by state
    */
   static matchRequest (response) {
     const { rp, params, session } = response
@@ -169,8 +168,7 @@ class AuthenticationResponse {
         'Mismatching state parameter in authentication response.')
     }
 
-    response.request = JSON.parse(request)
-    return response
+    return JSON.parse(request)
   }
 
   /**
@@ -315,13 +313,15 @@ class AuthenticationResponse {
   /**
    * validateIDToken
    *
-   * @param {object} response, with decoded ID Token.
+   * @param {AuthenticationResponse} response
+   *
+   * @returns {Promise}
    */
   static async validateIDToken (response) {
     const idToken = response.params.id_token
     // only validate the ID Token if present in the response
     if (!idToken) {
-      return response
+      return
     }
 
     // await this.decryptIDToken(response)
@@ -339,8 +339,6 @@ class AuthenticationResponse {
     // this.validateAuthTime()
     // this.validateAccessTokenHash()
     // this.validateAuthorizationCodeHash()
-
-    return response
   }
 
   /**
@@ -385,6 +383,9 @@ class AuthenticationResponse {
    */
   static validateIssuer (response) {
     const configuration = response.rp.provider.configuration
+    if (!response.decoded) {
+      throw new Error('Cannot validate issuer - missing decoded ID Token.')
+    }
     const payload = response.decoded.payload
 
     // validate issuer of token matches this relying party's provider
