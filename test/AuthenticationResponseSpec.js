@@ -15,12 +15,12 @@ chai.should()
 chai.use(require('sinon-chai'))
 chai.use(chaiAsPromised)
 chai.use(require('dirty-chai'))
-let expect = chai.expect
+const expect = chai.expect
 
 /**
  * Code under test
  */
-const {JWT, JWKSet} = require('@solid/jose')
+const { JWT, JWKSet } = require('@solid/jose')
 const IDToken = require('../src/IDToken')
 const AuthenticationResponse = require('../src/AuthenticationResponse')
 const { getPublicKey, getPrivateKey } = require('./keys')
@@ -30,12 +30,6 @@ const { getPublicKey, getPrivateKey } = require('./keys')
  */
 describe('AuthenticationResponse', () => {
   const providerJwks = require('./resources/example.com/jwks.json')
-
-  let publicKey, privateKey
-
-  before(async () => {
-
-  })
 
   afterEach(() => {
     nock.cleanAll()
@@ -174,7 +168,7 @@ describe('AuthenticationResponse', () => {
         error_uri: 'https://example.com/123',
         state: '$tate'
       }
-      const response = new AuthenticationResponse({ params: {...errorParams} })
+      const response = new AuthenticationResponse({ params: { ...errorParams } })
       try {
         AuthenticationResponse.errorResponse(response)
       } catch (error) {
@@ -262,9 +256,9 @@ describe('AuthenticationResponse', () => {
     const providerConfig = require('./resources/example.com/openid-configuration.json')
 
     const tokenResponse = {
-      'access_token': '4ccesst0ken',
-      'token_type': 'bearer',
-      'id_token': '1dt0ken'
+      access_token: '4ccesst0ken',
+      token_type: 'bearer',
+      id_token: '1dt0ken'
     }
 
     let response
@@ -272,20 +266,20 @@ describe('AuthenticationResponse', () => {
     beforeEach(() => {
       response = {
         request: {
-          'response_type': 'code',
-          'redirect_uri': 'https://app.example.com/callback'
+          response_type: 'code',
+          redirect_uri: 'https://app.example.com/callback'
         },
         params: {
           code: 'c0d3',
-          'id_token': 'jwt',
-          'access_token': 'client4ccess',
-          'token_type': 'bearer'
+          id_token: 'jwt',
+          access_token: 'client4ccess',
+          token_type: 'bearer'
         },
         rp: {
           provider: { configuration: providerConfig },
           registration: {
-            'client_id': 'client123',
-            'client_secret': 's33kret'
+            client_id: 'client123',
+            client_secret: 's33kret'
           }
         }
       }
@@ -295,7 +289,7 @@ describe('AuthenticationResponse', () => {
       const tokenRequest = nock(providerUrl).post('/token')
         .reply(200)
 
-      response.request['response_type'] = 'code id_token token'
+      response.request.response_type = 'code id_token token'
 
       const result = await AuthenticationResponse.exchangeAuthorizationCode(response)
       expect(tokenRequest.isDone()).to.be.false()
@@ -305,17 +299,17 @@ describe('AuthenticationResponse', () => {
     it('should exchange the code if response type is exactly `code`')
 
     it('should throw with a public client', () => {
-      delete response.rp.registration['client_secret']
+      delete response.rp.registration.client_secret
 
       return AuthenticationResponse.exchangeAuthorizationCode(response)
         .should.be.rejectedWith(/is not a confidential client/)
     })
 
     it('should set Content-Type header', () => {
-      let requiredHeaders = {
+      const requiredHeaders = {
         'content-type': 'application/x-www-form-urlencoded'
       }
-      let tokenRequest = nock(providerUrl, { reqheaders: requiredHeaders })
+      const tokenRequest = nock(providerUrl, { reqheaders: requiredHeaders })
         .post('/token')
         .reply(200, tokenResponse)
 
@@ -326,8 +320,8 @@ describe('AuthenticationResponse', () => {
     })
 
     it('should include grant_type in the request', () => {
-      let tokenRequest = nock(providerUrl)
-        .post('/token', /grant_type=authorization_code/)  // required body regex
+      const tokenRequest = nock(providerUrl)
+        .post('/token', /grant_type=authorization_code/) // required body regex
         .reply(200, tokenResponse)
 
       return AuthenticationResponse.exchangeAuthorizationCode(response)
@@ -337,8 +331,8 @@ describe('AuthenticationResponse', () => {
     })
 
     it('should include code in the request', () => {
-      let tokenRequest = nock(providerUrl)
-        .post('/token', /code=c0d3/)  // required body regex
+      const tokenRequest = nock(providerUrl)
+        .post('/token', /code=c0d3/) // required body regex
         .reply(200, tokenResponse)
 
       return AuthenticationResponse.exchangeAuthorizationCode(response)
@@ -348,7 +342,7 @@ describe('AuthenticationResponse', () => {
     })
 
     it('should include redirect_uri in the request', () => {
-      let tokenRequest = nock(providerUrl)
+      const tokenRequest = nock(providerUrl)
         .post('/token', /redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback/)
         .reply(200, tokenResponse)
 
@@ -360,7 +354,7 @@ describe('AuthenticationResponse', () => {
 
     it('should authenticate client with HTTP Basic credentials', async () => {
       const requiredHeaders = {
-        'authorization': 'Basic Y2xpZW50MTIzOnMzM2tyZXQ='
+        authorization: 'Basic Y2xpZW50MTIzOnMzM2tyZXQ='
       }
       const tokenRequest = nock(providerUrl, { reqheaders: requiredHeaders })
         .post('/token')
@@ -371,9 +365,9 @@ describe('AuthenticationResponse', () => {
     })
 
     it('should authenticate client with form POST credentials', () => {
-      response.rp.registration['token_endpoint_auth_method'] = 'client_secret_post'
+      response.rp.registration.token_endpoint_auth_method = 'client_secret_post'
 
-      let tokenRequest = nock(providerUrl)
+      const tokenRequest = nock(providerUrl)
         .post('/token', /client_id=client123&client_secret=s33kret/)
         .reply(200, tokenResponse)
 
@@ -386,12 +380,12 @@ describe('AuthenticationResponse', () => {
     it('should authenticate client with JWT')
 
     it('should validate the presence of token_type in token response', () => {
-      let tokenResponse = {
-        'access_token': '4ccesst0ken',
-        'id_token': '1dt0ken'
+      const tokenResponse = {
+        access_token: '4ccesst0ken',
+        id_token: '1dt0ken'
       }
 
-      let tokenRequest = nock(providerUrl)
+      nock(providerUrl)
         .post('/token')
         .reply(200, tokenResponse)
 
@@ -402,12 +396,12 @@ describe('AuthenticationResponse', () => {
     it('should include token response in response params')
 
     it('should reject on an http error', done => {
-      let providerUrl = 'https://notfound'
+      const providerUrl = 'https://notfound'
 
       nock(providerUrl).post('/token').reply(404)
 
       response.rp.provider.configuration.url = providerUrl
-      response.rp.provider.configuration['token_endpoint'] = providerUrl + '/token'
+      response.rp.provider.configuration.token_endpoint = providerUrl + '/token'
 
       AuthenticationResponse.exchangeAuthorizationCode(response)
         .catch(err => {
@@ -609,7 +603,7 @@ describe('AuthenticationResponse', () => {
     })
 
     it('should throw with mismatching signing algorithm', async () => {
-      response.rp.registration['id_token_signed_response_alg'] = 'HS256'
+      response.rp.registration.id_token_signed_response_alg = 'HS256'
       let error
       try {
         await AuthenticationResponse.verifySignature(response)

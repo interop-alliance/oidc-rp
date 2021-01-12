@@ -22,8 +22,8 @@ class AuthenticationRequest {
    * request URI.
    *
    * @param {RelyingParty} rp – instance of RelyingParty
-   * @param {Object} options - optional request parameters
-   * @param {Object} session – reference to localStorage or other session object
+   * @param {object} options - optional request parameters
+   * @param {object} session – reference to localStorage or other session object
    *
    * @returns {Promise}
    */

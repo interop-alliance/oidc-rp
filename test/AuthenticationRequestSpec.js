@@ -53,7 +53,7 @@ describe('AuthenticationRequest', () => {
 
   describe('create', () => {
     before(() => {
-       sinon.stub(AuthenticationRequest, 'generateSessionKeys').resolves({})
+      sinon.stub(AuthenticationRequest, 'generateSessionKeys').resolves({})
     })
 
     after(() => {
@@ -129,7 +129,7 @@ describe('AuthenticationRequest', () => {
 
     it('should persist the request to session by `state` param', () => {
       return AuthenticationRequest.create(rp, options, session).then(() => {
-        let requestKey = Object.keys(session)
+        const requestKey = Object.keys(session)
           .find(k => k.startsWith('https://forge.anvil.io/requestHistory/'))
 
         expect(requestKey).to.exist()
@@ -139,10 +139,10 @@ describe('AuthenticationRequest', () => {
 
     it('should persist the random octets for `state` to session', () => {
       return AuthenticationRequest.create(rp, options, session).then(() => {
-        let requestKey = Object.keys(session)
+        const requestKey = Object.keys(session)
           .find(k => k.startsWith('https://forge.anvil.io/requestHistory/'))
 
-        let octets = JSON.parse(session[requestKey]).state
+        const octets = JSON.parse(session[requestKey]).state
         octets.forEach(octet => {
           expect(Number.isInteger(octet)).to.equal(true)
         })
@@ -151,10 +151,10 @@ describe('AuthenticationRequest', () => {
 
     it('should persist the random octets for `nonce` to session', () => {
       return AuthenticationRequest.create(rp, options, session).then(() => {
-        let requestKey = Object.keys(session)
+        const requestKey = Object.keys(session)
           .find(k => k.startsWith('https://forge.anvil.io/requestHistory/'))
 
-        let octets = JSON.parse(session[requestKey]).nonce
+        const octets = JSON.parse(session[requestKey]).nonce
         octets.forEach(octet => {
           expect(Number.isInteger(octet)).to.equal(true)
         })
@@ -219,17 +219,17 @@ describe('AuthenticationRequest', () => {
     })
 
     it('generates a private signing key', () => {
-      let privateJwk = sessionKeys.private
+      const privateJwk = sessionKeys.private
 
       expect(privateJwk.alg).to.equal('RS256')
-      expect(privateJwk.key_ops).to.eql([ 'sign' ])
+      expect(privateJwk.key_ops).to.eql(['sign'])
     })
 
     it('generates a public verification key', () => {
-      let publicJwk = sessionKeys.public
+      const publicJwk = sessionKeys.public
 
       expect(publicJwk.alg).to.equal('RS256')
-      expect(publicJwk.key_ops).to.eql([ 'verify' ])
+      expect(publicJwk.key_ops).to.eql(['verify'])
     })
   })
 
@@ -249,7 +249,7 @@ describe('AuthenticationRequest', () => {
     })
 
     it('stores the serialized private key in session storage', () => {
-      let key = 'oidc.session.privateKey'
+      const key = 'oidc.session.privateKey'
       expect(session[key]).to.equal(serializedPrivateKey)
     })
   })
@@ -274,7 +274,7 @@ describe('AuthenticationRequest', () => {
             client_id: 'client123',
             response_type: 'id_token token',
             request: 'eyJhbGciOiJub25lIn0.eyJub25jZSI6IjEyMzQiLCJyZWRpcmVjdF91cmkiOiJodHRwczovL2V4YW1wbGUuY29tL2NhbGxiYWNrIiwia2V5Ijp7ImFsZyI6IlJTMjU2Iiwia2V5X29wcyI6WyJ2ZXJpZnkiXX0sImRpc3BsYXkiOiJwb3B1cCJ9.',
-            state:'abcd'
+            state: 'abcd'
           })
         })
     })
