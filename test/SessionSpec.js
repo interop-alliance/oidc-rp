@@ -10,7 +10,7 @@ const chai = require('chai')
  */
 chai.use(require('dirty-chai'))
 chai.should()
-let expect = chai.expect
+const expect = chai.expect
 
 /**
  * Code under test

@@ -9,7 +9,6 @@ const chai = require('chai')
  * Assertions
  */
 chai.should()
-let expect = chai.expect
 
 /**
  * Code under test
@@ -21,11 +20,6 @@ const FormUrlEncoded = require('../src/FormUrlEncoded')
  */
 describe('FormUrlEncoded', () => {
   describe('encode', () => {
-    let encoded
-
-    before(() => {
-    })
-
     it('should return a string', () => {
       (typeof FormUrlEncoded.encode({
         w: 'whisky',
@@ -35,7 +29,7 @@ describe('FormUrlEncoded', () => {
     })
 
     it('should separate key and value with "="', () => {
-      let encoded = FormUrlEncoded.encode({
+      const encoded = FormUrlEncoded.encode({
         w: 'whisky',
         t: 'tango',
         f: 'foxtrot'
@@ -47,7 +41,7 @@ describe('FormUrlEncoded', () => {
     })
 
     it('should separate key/value pairs with "&"', () => {
-      let encoded = FormUrlEncoded.encode({
+      const encoded = FormUrlEncoded.encode({
         w: 'whisky',
         t: 'tango',
         f: 'foxtrot'
@@ -73,16 +67,15 @@ describe('FormUrlEncoded', () => {
     })
 
     it('should parse key/value pairs', () => {
-      let decoded = FormUrlEncoded.decode('alpha=bet&beta=max')
+      const decoded = FormUrlEncoded.decode('alpha=bet&beta=max')
       decoded.alpha.should.equal('bet')
       decoded.beta.should.equal('max')
     })
 
     it('should decode URI components', () => {
-      let data = 'https%3A%2F%2Fanvil.io=hammering%20bits%20into%20shape'
-      let decoded = FormUrlEncoded.decode(data)
+      const data = 'https%3A%2F%2Fanvil.io=hammering%20bits%20into%20shape'
+      const decoded = FormUrlEncoded.decode(data)
       decoded['https://anvil.io'].should.equal('hammering bits into shape')
     })
   })
 })
-

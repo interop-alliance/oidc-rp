@@ -14,7 +14,7 @@ chai.use(require('sinon-chai'))
 chai.use(require('chai-as-promised'))
 chai.use(require('dirty-chai'))
 chai.should()
-let expect = chai.expect
+const expect = chai.expect
 
 /**
  * Code under test
@@ -44,7 +44,7 @@ describe('RelyingParty', () => {
     })
 
     it('should reject if provider config is absent', () => {
-      let options = {
+      const options = {
         provider: { url: providerUrl }
       }
 
@@ -69,9 +69,9 @@ describe('RelyingParty', () => {
     })
 
     it('should import JWK Set if defined in argument', () => {
-      let jwkRequest = nock(providerUrl).get('/jwks').reply(200, providerJwks)
+      const jwkRequest = nock(providerUrl).get('/jwks').reply(200, providerJwks)
 
-      let options = {
+      const options = {
         provider: {
           url: providerUrl,
           configuration: rpProviderConfig,
@@ -89,8 +89,8 @@ describe('RelyingParty', () => {
   })
 
   describe('static register', () => {
-    let registrationOptions = {}
-    let options = {}
+    const registrationOptions = {}
+    const options = {}
 
     beforeEach(() => {
       nock(providerUrl).get('/.well-known/openid-configuration')
@@ -111,10 +111,10 @@ describe('RelyingParty', () => {
     it('should request provider OpenID configuration', () => {
       return RelyingParty.register(providerUrl, registrationOptions, options)
         .then(rp => {
-          let providerConfig = rp.provider.configuration
+          const providerConfig = rp.provider.configuration
 
           expect(providerConfig).to.exist()
-          expect(providerConfig['registration_endpoint'])
+          expect(providerConfig.registration_endpoint)
             .to.equal('https://example.com/register')
         })
     })
@@ -122,7 +122,7 @@ describe('RelyingParty', () => {
     it('should import provider JWK Set', () => {
       return RelyingParty.register(providerUrl, registrationOptions, options)
         .then(rp => {
-          let providerJwks = rp.provider.jwks
+          const providerJwks = rp.provider.jwks
 
           expect(providerJwks).to.exist()
           expect(providerJwks.keys[0].alg).to.equal('RS256')
@@ -144,13 +144,13 @@ describe('RelyingParty', () => {
     })
 
     it('should reject with missing provider url (issuer)', () => {
-      let rp = new RelyingParty({ provider: {} })
+      const rp = new RelyingParty({ provider: {} })
 
       return rp.discover().should.be.rejectedWith(/RelyingParty provider must define "url"/)
     })
 
     it('should resolve and set provider OpenID Configuration', () => {
-      let rp = new RelyingParty({ provider: { url: providerUrl }})
+      const rp = new RelyingParty({ provider: { url: providerUrl } })
 
       return rp.discover()
         .then(() => {
@@ -162,7 +162,7 @@ describe('RelyingParty', () => {
       nock('https://notfound').get('/.well-known/openid-configuration')
         .reply(404)
 
-      let rp = new RelyingParty({ provider: { url: 'https://notfound' }})
+      const rp = new RelyingParty({ provider: { url: 'https://notfound' } })
 
       rp.discover()
         .catch(err => {
@@ -170,7 +170,6 @@ describe('RelyingParty', () => {
             .to.match(/Error fetching openid configuration: 404 Not Found/)
           done()
         })
-
     })
   })
 
@@ -180,23 +179,23 @@ describe('RelyingParty', () => {
     })
 
     it('should reject with missing OpenID Configuration', () => {
-      let rp = new RelyingParty({ provider: {} })
+      const rp = new RelyingParty({ provider: {} })
 
       return rp.jwks().should.be.rejectedWith(/OpenID Configuration is not initialized/)
     })
 
     it('should reject with missing jwks uri', () => {
-      let rp = new RelyingParty({ provider: { configuration: {} } })
+      const rp = new RelyingParty({ provider: { configuration: {} } })
 
       return rp.jwks().should.be.rejectedWith(/OpenID Configuration is missing jwks_uri/)
     })
 
     it('should import and set provider JWK Set', () => {
-      let provider = {
+      const provider = {
         url: providerUrl,
         configuration: { jwks_uri: providerUrl + '/jwks' }
       }
-      let rp = new RelyingParty({ provider })
+      const rp = new RelyingParty({ provider })
 
       return rp.jwks()
         .then(() => {
@@ -205,11 +204,11 @@ describe('RelyingParty', () => {
     })
 
     it('should resolve JWK Set', () => {
-      let provider = {
+      const provider = {
         url: providerUrl,
         configuration: { jwks_uri: providerUrl + '/jwks' }
       }
-      let rp = new RelyingParty({ provider })
+      const rp = new RelyingParty({ provider })
 
       return rp.jwks()
         .then(jwks => {
@@ -218,15 +217,15 @@ describe('RelyingParty', () => {
     })
 
     it('should reject on http error', done => {
-      let providerUrl = 'https://notfound'
+      const providerUrl = 'https://notfound'
 
       nock(providerUrl).get('/jwks').reply(404)
 
-      let provider = {
+      const provider = {
         url: providerUrl,
         configuration: { jwks_uri: providerUrl + '/jwks' }
       }
-      let rp = new RelyingParty({ provider })
+      const rp = new RelyingParty({ provider })
 
       rp.jwks()
         .catch(err => {
@@ -292,18 +291,18 @@ describe('RelyingParty', () => {
 
   describe('logout', () => {
     it('should reject with missing OpenID Configuration', () => {
-      let rp = new RelyingParty()
+      const rp = new RelyingParty()
 
       return rp.logout().should.be.rejectedWith(/OpenID Configuration is not initialized/)
     })
 
     it('should return undefined when no end_session_endpoint exists', () => {
-      let options = {
+      const options = {
         provider: {
           configuration: { issuer: 'https://forge.anvil.io' }
         }
       }
-      let rp = new RelyingParty(options)
+      const rp = new RelyingParty(options)
 
       return rp.logout()
         .then(response => {
@@ -312,13 +311,13 @@ describe('RelyingParty', () => {
     })
 
     it('should make a request to the end_session_endpoint', () => {
-      let logoutRequest = nock(providerUrl).get('/logout').reply(200)
+      const logoutRequest = nock(providerUrl).get('/logout').reply(200)
 
-      let provider = {
+      const provider = {
         url: providerUrl,
         configuration: rpProviderConfig
       }
-      let rp = new RelyingParty({ provider, store: {} })
+      const rp = new RelyingParty({ provider, store: {} })
 
       return rp.logout()
         .then(() => {
@@ -327,17 +326,17 @@ describe('RelyingParty', () => {
     })
 
     it('should reject on http error', done => {
-      let providerUrl = 'https://notfound'
+      const providerUrl = 'https://notfound'
 
       nock(providerUrl).get('/logout').reply(404)
 
-      let provider = {
+      const provider = {
         url: providerUrl,
         configuration: {
           end_session_endpoint: 'https://notfound/logout'
         }
       }
-      let rp = new RelyingParty({ provider })
+      const rp = new RelyingParty({ provider })
 
       rp.logout()
         .catch(err => {
@@ -358,34 +357,34 @@ describe('RelyingParty', () => {
     })
 
     it('should reject with missing OpenID Configuration', () => {
-      let options = { provider: {} }
-      let rp = new RelyingParty(options)
+      const options = { provider: {} }
+      const rp = new RelyingParty(options)
 
       return rp.register().should.be.rejectedWith(/OpenID Configuration is not initialized/)
     })
 
     it('should reject with missing registration endpoint', () => {
-      let options = {
+      const options = {
         provider: {
           configuration: { issuer: providerUrl }
         },
         store: {}
       }
-      let rp = new RelyingParty(options)
+      const rp = new RelyingParty(options)
 
       return rp.register().should.be.rejectedWith(/OpenID Configuration is missing registration_endpoint/)
     })
 
     it('should resolve client registration', () => {
-      let options = {
+      const options = {
         provider: {
           configuration: {
             issuer: providerUrl,
-            'registration_endpoint': 'https://example.com/register'
+            registration_endpoint: 'https://example.com/register'
           }
         }
       }
-      let rp = new RelyingParty(options)
+      const rp = new RelyingParty(options)
 
       return rp.register()
         .then(response => {
@@ -394,15 +393,15 @@ describe('RelyingParty', () => {
     })
 
     it('should set client registration', () => {
-      let options = {
+      const options = {
         provider: {
           configuration: {
             issuer: providerUrl,
-            'registration_endpoint': 'https://example.com/register'
+            registration_endpoint: 'https://example.com/register'
           }
         }
       }
-      let rp = new RelyingParty(options)
+      const rp = new RelyingParty(options)
 
       return rp.register()
         .then(() => {
@@ -413,15 +412,15 @@ describe('RelyingParty', () => {
     it('should reject on an http error', done => {
       nock('https://notfound').post('/register').reply(404)
 
-      let options = {
+      const options = {
         provider: {
           configuration: {
             issuer: 'https://notfound',
-            'registration_endpoint': 'https://notfound/register'
+            registration_endpoint: 'https://notfound/register'
           }
         }
       }
-      let rp = new RelyingParty(options)
+      const rp = new RelyingParty(options)
 
       rp.register()
         .catch(err => {
@@ -433,44 +432,44 @@ describe('RelyingParty', () => {
 
   describe('userinfo', () => {
     it('should reject with missing OpenID Configuration', () => {
-      let options = { provider: {} }
-      let rp = new RelyingParty(options)
+      const options = { provider: {} }
+      const rp = new RelyingParty(options)
 
       return rp.userinfo().should.be.rejectedWith(/OpenID Configuration is not initialized/)
     })
 
     it('should reject with missing userinfo endpoint', () => {
-      let options = {
+      const options = {
         provider: {
           configuration: { issuer: 'https://forge.anvil.io' }
         }
       }
-      let rp = new RelyingParty(options)
+      const rp = new RelyingParty(options)
 
       return rp.userinfo().should.be.rejectedWith(/OpenID Configuration is missing userinfo_endpoint/)
     })
 
     it('should reject with missing access token', () => {
-      let options = {
+      const options = {
         provider: { configuration: rpProviderConfig },
         store: {}
       }
-      let rp = new RelyingParty(options)
+      const rp = new RelyingParty(options)
 
       return rp.userinfo()
         .should.be.rejectedWith(/Missing access token./)
     })
 
     it('should resolve parsed JSON response', () => {
-      let userinfo = { sub: 'user123' }
-      let userInfoReq = nock(providerUrl).get('/userinfo')
+      const userinfo = { sub: 'user123' }
+      const userInfoReq = nock(providerUrl).get('/userinfo')
         .reply(200, userinfo)
 
-      let options = {
+      const options = {
         provider: { configuration: rpProviderConfig },
-        store: { 'access_token': '1234' }
+        store: { access_token: '1234' }
       }
-      let rp = new RelyingParty(options)
+      const rp = new RelyingParty(options)
 
       return rp.userinfo()
         .then(res => {
@@ -482,16 +481,16 @@ describe('RelyingParty', () => {
     it('should reject on an http error', done => {
       nock('https://notfound').get('/userinfo').reply(404)
 
-      let options = {
+      const options = {
         provider: {
           configuration: {
             issuer: 'https://notfound',
-            'userinfo_endpoint': 'https://notfound/userinfo'
+            userinfo_endpoint: 'https://notfound/userinfo'
           }
         },
-        store: { 'access_token': '1234' }
+        store: { access_token: '1234' }
       }
-      let rp = new RelyingParty(options)
+      const rp = new RelyingParty(options)
 
       rp.userinfo()
         .catch(err => {
@@ -515,13 +514,13 @@ describe('RelyingParty', () => {
     })
 
     it('should create an AuthenticationRequest instance', () => {
-      let request = {}
+      const request = {}
       sinon.stub(AuthenticationRequest, 'create').resolves(request)
 
-      let store = {}
-      let rp = new RelyingParty({ store })
+      const store = {}
+      const rp = new RelyingParty({ store })
 
-      let options = {}
+      const options = {}
 
       return rp.createRequest(options)
         .then(res => {

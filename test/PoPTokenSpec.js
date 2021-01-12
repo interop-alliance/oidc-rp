@@ -13,7 +13,7 @@ const sinon = require('sinon')
 chai.use(require('chai-as-promised'))
 chai.use(require('dirty-chai'))
 chai.should()
-let expect = chai.expect
+const expect = chai.expect
 
 /**
  * Code under test
@@ -21,7 +21,7 @@ let expect = chai.expect
 const PoPToken = require('../src/PoPToken')
 const Session = require('../src/Session')
 const { sampleSessionKeys, serializedPrivateKey } = require('./keys/index')
-const {JWT, JWK} = require('@solid/jose')
+const { JWT, JWK } = require('@solid/jose')
 
 const providerUri = 'https://provider.example.com'
 const resourceServerUri = 'https://rs.example.net'
@@ -50,7 +50,7 @@ describe('PoPToken', () => {
 
   describe('issueFor', () => {
     it('should issue a PoP token for an RS', () => {
-      let resourceServerUri = 'https://rs.example.net/some/path'
+      const resourceServerUri = 'https://rs.example.net/some/path'
       return PoPToken.issueFor(resourceServerUri, session)
         .then(token => JWT.decode(token))
         .then(popJwt => {
