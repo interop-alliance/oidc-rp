@@ -268,6 +268,7 @@ class AuthenticationResponse {
     const bodyContents = {
       grant_type: 'authorization_code',
       code: code,
+      code_verifier: response.request.code_verifier,
       redirect_uri: request.redirect_uri
     }
 
