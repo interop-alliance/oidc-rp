@@ -6,6 +6,7 @@ const crypto = require('isomorphic-webcrypto')
 const { encode: base64urlEncode } = require('base64url-universal')
 const { JWT } = require('@solid/jose')
 const FormUrlEncoded = require('./FormUrlEncoded')
+const { IdGenerator } = require('bnid')
 
 /**
  * Authentication Request
@@ -66,6 +67,13 @@ class AuthenticationRequest {
     assert(params.redirect_uri,
       'Missing redirect_uri parameter in authentication request')
 
+    // generate code_verifier random octets for PKCE
+    // @see https://tools.ietf.org/html/rfc7636
+    const generator = new IdGenerator({ bitLength: 256 })
+    const codeVerifier = base64urlEncode(await generator.generate())
+    // store verifier, for future use with token endpoint
+    params.code_verifier = codeVerifier
+
     // generate state and nonce random octets
     params.state = Array.from(crypto.getRandomValues(new Uint8Array(16)))
     params.nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
@@ -90,6 +98,15 @@ class AuthenticationRequest {
     // replace state and nonce octets with base64url encoded digests
     params.state = state
     params.nonce = nonce
+
+    // code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))
+    const encoder = new TextEncoder()
+    params.code_challenge = base64urlEncode(
+      await crypto.subtle.digest(
+        { name: 'SHA-256' }, encoder.encode(codeVerifier)
+      )
+    )
+    params.code_challenge_method = 'S256'
 
     const sessionKeys = await AuthenticationRequest.generateSessionKeys()
     await AuthenticationRequest.storeSessionKeys(sessionKeys, params, session)

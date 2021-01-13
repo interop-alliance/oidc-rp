@@ -42,6 +42,7 @@
     "@solid/jose": "solid/jose#browser",
     "assert": "^2.0.0",
     "base64url-universal": "^1.1.0",
+    "bnid": "^2.0.0",
     "isomorphic-fetch": "^3.0.0",
     "isomorphic-webcrypto": "^2.3.6",
     "standard-http-error": "^2.0.1",

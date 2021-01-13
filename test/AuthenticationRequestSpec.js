@@ -167,11 +167,13 @@ describe('AuthenticationRequest', () => {
       })
     })
 
-    it('should set default paramters', () => {
+    it('should set default parameters', () => {
       return AuthenticationRequest.create(rp, options, session).then(url => {
         url.should.include('scope=openid')
         url.should.include('response_type=id_token%20token')
         url.should.include('redirect_uri=https%3A%2F%2Fexample.com%2Fcallback')
+        url.should.include('code_challenge_method=S256')
+        url.should.include('code_challenge=')
       })
     })
 
@@ -213,9 +215,8 @@ describe('AuthenticationRequest', () => {
   describe('generateSessionKeys', () => {
     let sessionKeys
 
-    before(() => {
-      return AuthenticationRequest.generateSessionKeys()
-        .then(keys => sessionKeys = keys)
+    before(async () => {
+      sessionKeys = await AuthenticationRequest.generateSessionKeys()
     })
 
     it('generates a private signing key', () => {
