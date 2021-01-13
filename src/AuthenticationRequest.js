@@ -6,7 +6,6 @@ const base64url = require('base64url')
 const crypto = require('isomorphic-webcrypto')
 const { JWT } = require('@solid/jose')
 const FormUrlEncoded = require('./FormUrlEncoded')
-const { URL } = require('whatwg-url')
 
 /**
  * Authentication Request

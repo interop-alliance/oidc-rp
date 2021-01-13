@@ -1,6 +1,6 @@
 'use strict'
 
-const fetch = require('node-fetch')
+require('isomorphic-fetch')
 const onHttpError = require('./onHttpError')
 const PoPToken = require('./PoPToken')
 
@@ -58,7 +58,9 @@ class Session {
     const rpAuthOptions = rp.defaults.authenticate || {}
 
     const credentialType = rpAuthOptions.credential_type ||
-      rp.defaults.popToken ? 'pop_token' : 'access_token'
+      rp.defaults.popToken
+      ? 'pop_token'
+      : 'access_token'
 
     const sessionKey = response.session[RelyingParty.SESSION_PRIVATE_KEY]
 

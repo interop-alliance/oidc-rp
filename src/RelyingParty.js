@@ -1,10 +1,10 @@
 /* eslint-disable camelcase */
+'use strict'
 /**
  * Dependencies
  */
+require('isomorphic-fetch')
 const assert = require('assert')
-const fetch = require('node-fetch')
-const { URL } = require('whatwg-url')
 const Headers = fetch.Headers ? fetch.Headers : global.Headers
 const { JWKSet } = require('@solid/jose')
 const AuthenticationRequest = require('./AuthenticationRequest')

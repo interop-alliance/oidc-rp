@@ -2,11 +2,10 @@
 /**
  * Dependencies
  */
-const { URL } = require('whatwg-url')
+require('isomorphic-fetch')
 const assert = require('assert')
 const crypto = require('isomorphic-webcrypto')
 const base64url = require('base64url')
-const fetch = require('node-fetch')
 const Headers = fetch.Headers ? fetch.Headers : global.Headers
 const FormUrlEncoded = require('./FormUrlEncoded')
 const IDToken = require('./IDToken')

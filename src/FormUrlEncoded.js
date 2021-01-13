@@ -6,7 +6,6 @@
  * FormUrlEncoded
  */
 class FormUrlEncoded {
-
   /**
    * Encode
    *
@@ -17,13 +16,13 @@ class FormUrlEncoded {
    * @returns {string}
    */
   static encode (data) {
-     let pairs = []
+    const pairs = []
 
-     Object.keys(data).forEach(function (key) {
-       pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
-     })
+    Object.keys(data).forEach(function (key) {
+      pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
+    })
 
-     return pairs.join('&')
+    return pairs.join('&')
   }
 
   /**
@@ -36,12 +35,12 @@ class FormUrlEncoded {
    * @returns {Object}
    */
   static decode (data) {
-    let obj = {}
+    const obj = {}
 
     data.split('&').forEach(function (property) {
-      let pair = property.split('=')
-      let key = decodeURIComponent(pair[0])
-      let val = decodeURIComponent(pair[1])
+      const pair = property.split('=')
+      const key = decodeURIComponent(pair[0])
+      const val = decodeURIComponent(pair[1])
 
       obj[key] = val
     })

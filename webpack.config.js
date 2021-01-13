@@ -13,11 +13,5 @@ module.exports = {
   },
   module: {
   },
-  externals: {
-    'node-fetch': 'fetch',
-    '@sinonjs/text-encoding': 'TextEncoder',
-    'whatwg-url': 'window',
-    'isomorphic-webcrypto': 'crypto'
-  },
   devtool: 'source-map'
 }
