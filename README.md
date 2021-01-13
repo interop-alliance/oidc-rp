@@ -80,7 +80,6 @@ section:
   externals: {
     'node-fetch': 'fetch',
     '@sinonjs/text-encoding': 'TextEncoder',
-    'whatwg-url': 'window',
     'isomorphic-webcrypto': 'crypto'
   }
 ```

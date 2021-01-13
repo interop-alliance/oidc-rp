@@ -1,6 +1,5 @@
 'use strict'
 
-const { URL } = require('whatwg-url')
 const { JWT, JWK } = require('@solid/jose')
 
 const DEFAULT_MAX_AGE = 3600 // Default token expiration, in seconds

@@ -28,8 +28,8 @@ function onHttpError (message = 'fetch error') {
       return response
     }
 
-    let errorMessage = `${message}: ${response.status} ${response.statusText}`
-    let error = new Error(errorMessage)
+    const errorMessage = `${message}: ${response.status} ${response.statusText}`
+    const error = new Error(errorMessage)
     error.response = response
     error.statusCode = response.status
     throw error

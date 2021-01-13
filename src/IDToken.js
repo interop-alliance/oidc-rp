@@ -1,7 +1,9 @@
+/* eslint-disable camelcase */
+'use strict'
 /**
  * Local dependencies
  */
-const {JWT} = require('@solid/jose')
+const { JWT } = require('@solid/jose')
 
 const REQUIRED_CLAIMS = ['iss', 'sub', 'aud', 'exp', 'iat']
 
@@ -69,7 +71,7 @@ class IDToken extends JWT {
       return payloadResult
     }
 
-    let valid = true
+    const valid = true
     let error
 
     return { valid, error }

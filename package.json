@@ -39,12 +39,12 @@
   },
   "homepage": "https://github.com/solid/oidc-rp",
   "dependencies": {
-    "@solid/jose": "^0.5.0",
+    "@solid/jose": "solid/jose#browser",
+    "assert": "^2.0.0",
     "base64url": "^3.0.1",
-    "isomorphic-webcrypto": "^2.3.2",
-    "node-fetch": "^2.6.0",
-    "standard-http-error": "^2.0.1",
-    "whatwg-url": "^7.1.0"
+    "isomorphic-fetch": "^3.0.0",
+    "isomorphic-webcrypto": "^2.3.6",
+    "standard-http-error": "^2.0.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -52,13 +52,16 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "dirty-chai": "^2.0.1",
-    "mocha": "^6.2.2",
-    "nock": "^11.7.0",
-    "sinon": "^7.5.0",
-    "sinon-chai": "^3.3.0",
-    "standard": "^14.3.1",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.10"
+    "mocha": "^8.2.1",
+    "nock": "^13.0.5",
+    "sinon": "^9.2.3",
+    "sinon-chai": "^3.5.0",
+    "standard": "^16.0.3",
+    "webpack": "^5.13.0",
+    "webpack-cli": "^4.3.1"
+  },
+  "browser": {
+    "crypto": false
   },
   "standard": {
     "globals": [
@@ -67,6 +70,7 @@
       "before",
       "beforeEach",
       "describe",
+      "fetch",
       "it"
     ]
   }
