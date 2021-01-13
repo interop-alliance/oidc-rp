@@ -2,8 +2,8 @@
  * Dependencies
  */
 const assert = require('assert')
-const base64url = require('base64url')
 const crypto = require('isomorphic-webcrypto')
+const { encode: base64urlEncode } = require('base64url-universal')
 const { JWT } = require('@solid/jose')
 const FormUrlEncoded = require('./FormUrlEncoded')
 
@@ -79,8 +79,8 @@ class AuthenticationRequest {
     // serialize the request with original values, store in session by
     // encoded state param, and replace state/nonce octets with encoded
     // digests
-    const state = base64url(Buffer.from(digests[0]))
-    const nonce = base64url(Buffer.from(digests[1]))
+    const state = base64urlEncode(digests[0])
+    const nonce = base64urlEncode(digests[1])
     const key = `${issuer}/requestHistory/${state}`
 
     // store the request params for response validation

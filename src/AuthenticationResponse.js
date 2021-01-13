@@ -5,13 +5,14 @@
 require('isomorphic-fetch')
 const assert = require('assert')
 const crypto = require('isomorphic-webcrypto')
-const base64url = require('base64url')
+const { encode: base64urlEncode } = require('base64url-universal')
 const Headers = fetch.Headers ? fetch.Headers : global.Headers
 const FormUrlEncoded = require('./FormUrlEncoded')
 const IDToken = require('./IDToken')
 const Session = require('./Session')
 const onHttpError = require('./onHttpError')
 const HttpError = require('standard-http-error')
+const { encode: base64encode } = require('universal-base64')
 
 /**
  * AuthenticationResponse
@@ -181,7 +182,7 @@ class AuthenticationResponse {
     const encoded = response.params.state
 
     const digest = await crypto.subtle.digest({ name: 'SHA-256' }, octets)
-    if (encoded !== base64url(Buffer.from(digest))) {
+    if (encoded !== base64urlEncode(digest)) {
       throw new Error(
         'Mismatching state parameter in authentication response.')
     }
@@ -192,7 +193,7 @@ class AuthenticationResponse {
   /**
    * validateResponseMode
    *
-   * @param {Object} response
+   * @param {object} response
    */
   static validateResponseMode (response) {
     if (response.request.response_type !== 'code' && response.mode === 'query') {
@@ -276,8 +277,7 @@ class AuthenticationResponse {
 
     // client secret basic authentication
     if (authMethod === 'client_secret_basic') {
-      const credentials = Buffer.from(`${id}:${secret}`)
-        .toString('base64')
+      const credentials = base64encode(`${id}:${secret}`)
       headers.set('Authorization', `Basic ${credentials}`)
     }
 
@@ -343,7 +343,7 @@ class AuthenticationResponse {
   /**
    * decryptIDToken
    *
-   * @param {Object} response
+   * @param {object} response
    * @returns {Promise}
    */
   static async decryptIDToken (response) {
@@ -398,7 +398,7 @@ class AuthenticationResponse {
   /**
    * validateAudience
    *
-   * @param {Object} response
+   * @param {object} response
    */
   static validateAudience (response) {
     const registration = response.rp.registration
@@ -497,7 +497,7 @@ class AuthenticationResponse {
   /**
    * verifyNonce
    *
-   * @param {Object} response
+   * @param {object} response
    * @returns {Promise}
    */
   static async verifyNonce (response) {
@@ -509,7 +509,7 @@ class AuthenticationResponse {
     }
 
     const digest = await crypto.subtle.digest({ name: 'SHA-256' }, octets)
-    if (nonce !== base64url(Buffer.from(digest))) {
+    if (nonce !== base64urlEncode(digest)) {
       throw new Error('Mismatching nonce in ID Token.')
     }
   }
@@ -517,8 +517,8 @@ class AuthenticationResponse {
   /**
    * validateAcr
    *
-   * @param {Object} response
-   * @returns {Object}
+   * @param {object} response
+   * @returns {object}
    */
   static validateAcr (response) {
     // TODO
@@ -528,7 +528,7 @@ class AuthenticationResponse {
   /**
    * validateAuthTime
    *
-   * @param {Object} response
+   * @param {object} response
    * @returns {Promise}
    */
   static validateAuthTime (response) {
@@ -539,7 +539,7 @@ class AuthenticationResponse {
   /**
    * validateAccessTokenHash
    *
-   * @param {Object} response
+   * @param {object} response
    * @returns {Promise}
    */
   static validateAccessTokenHash (response) {
@@ -550,7 +550,7 @@ class AuthenticationResponse {
   /**
    * validateAuthorizationCodeHash
    *
-   * @param {Object} response
+   * @param {object} response
    * @returns {Promise}
    */
   static validateAuthorizationCodeHash (response) {
