@@ -4,7 +4,7 @@
  */
 require('isomorphic-fetch')
 const assert = require('assert')
-const crypto = require('isomorphic-webcrypto')
+const crypto = require('./crypto')
 const { encode: base64urlEncode } = require('base64url-universal')
 const Headers = fetch.Headers ? fetch.Headers : global.Headers
 const FormUrlEncoded = require('./FormUrlEncoded')

@@ -2,7 +2,7 @@
  * Dependencies
  */
 const assert = require('assert')
-const crypto = require('isomorphic-webcrypto')
+const crypto = require('./crypto')
 const { encode: base64urlEncode } = require('base64url-universal')
 const { JWT } = require('@solid/jose')
 const FormUrlEncoded = require('./FormUrlEncoded')
