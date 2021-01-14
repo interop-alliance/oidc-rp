@@ -177,7 +177,7 @@ describe('AuthenticationRequest', () => {
       })
     })
 
-    it('should override default paramters', () => {
+    it('should override default parameters', () => {
       options = { scope: 'openid profile email' }
       return AuthenticationRequest.create(rp, options, session).then(url => {
         url.should.include('scope=openid%20profile%20email')
@@ -203,9 +203,16 @@ describe('AuthenticationRequest', () => {
     })
 
     it('should set optional parameters', () => {
-      options = { display: 'page' }
+      options = {
+        display: 'page',
+        acr_values: 'http://idmanagement.gov/ns/assurance/ial/1',
+        prompt: 'select_account',
+        response_type: 'code'
+      }
       return AuthenticationRequest.create(rp, options, session).then(url => {
         url.should.include('display=page')
+        url.should.include('acr_values=http')
+        url.should.include('prompt=select_account')
       })
     })
 

@@ -148,7 +148,9 @@ class AuthenticationRequest {
   static storeSessionKeys (sessionKeys, params, session) {
     // store the private one in session, public one goes into params
     session['oidc.session.privateKey'] = JSON.stringify(sessionKeys.private)
-    params.key = sessionKeys.public
+    if (sessionKeys.public) {
+      params.key = sessionKeys.public
+    }
   }
 
   static async encodeRequestParams (params) {
