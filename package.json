@@ -64,7 +64,7 @@
   },
   "browser": {
     "buffer": false,
-    "./crypto.js": "./crypto-browser.js"
+    "./src/crypto.js": "./src/crypto-browser.js"
   },
   "standard": {
     "globals": [
