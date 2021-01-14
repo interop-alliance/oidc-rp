@@ -87,8 +87,8 @@ class AuthenticationRequest {
     // serialize the request with original values, store in session by
     // encoded state param, and replace state/nonce octets with encoded
     // digests
-    const state = base64urlEncode(digests[0])
-    const nonce = base64urlEncode(digests[1])
+    const state = base64urlEncode(new Uint8Array(digests[0]))
+    const nonce = base64urlEncode(new Uint8Array(digests[1]))
     const key = `${issuer}/requestHistory/${state}`
 
     // store the request params for response validation
@@ -101,11 +101,10 @@ class AuthenticationRequest {
 
     // code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))
     const encoder = new TextEncoder()
-    params.code_challenge = base64urlEncode(
-      await crypto.subtle.digest(
-        { name: 'SHA-256' }, encoder.encode(codeVerifier)
-      )
+    const challengeDigest = await crypto.subtle.digest(
+      { name: 'SHA-256' }, encoder.encode(codeVerifier)
     )
+    params.code_challenge = base64urlEncode(new Uint8Array(challengeDigest))
     params.code_challenge_method = 'S256'
 
     const sessionKeys = await AuthenticationRequest.generateSessionKeys()

@@ -182,7 +182,7 @@ class AuthenticationResponse {
     const encoded = response.params.state
 
     const digest = await crypto.subtle.digest({ name: 'SHA-256' }, octets)
-    if (encoded !== base64urlEncode(digest)) {
+    if (encoded !== base64urlEncode(new Uint8Array(digest))) {
       throw new Error(
         'Mismatching state parameter in authentication response.')
     }
@@ -510,7 +510,7 @@ class AuthenticationResponse {
     }
 
     const digest = await crypto.subtle.digest({ name: 'SHA-256' }, octets)
-    if (nonce !== base64urlEncode(digest)) {
+    if (nonce !== base64urlEncode(new Uint8Array(digest))) {
       throw new Error('Mismatching nonce in ID Token.')
     }
   }
