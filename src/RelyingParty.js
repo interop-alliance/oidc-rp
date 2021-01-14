@@ -79,7 +79,7 @@ class RelyingParty {
    * @description
    * Create a RelyingParty instance from a previously registered client.
    *
-   * @param {Object} data
+   * @param {object} data
    * @returns {Promise<RelyingParty>}
    */
   static async from (data) {
@@ -108,11 +108,11 @@ class RelyingParty {
    * register
    *
    * @param issuer {string} Provider URL
-   * @param registration {Object} Client dynamic registration options
-   * @param options {Object}
+   * @param registration {object} Client dynamic registration options
+   * @param options {object}
    * @param options.defaults
    * @param [options.store] {Session|Storage}
-   * @param [oobRegistration] {Object} Object providing getRegistration(key) function for out-of-band registrations
+   * @param [oobRegistration] {object} Object providing getRegistration(key) function for out-of-band registrations
    * @param [idpId] {string} A tag identifying the provider used for looking up out-of-band registration data.
    * @returns {Promise<RelyingParty>} RelyingParty instance, registered.
    */
@@ -175,7 +175,7 @@ class RelyingParty {
    *
    * @description Register's a client with provider as a Relying Party
    *
-   * @param options {Object}
+   * @param options {object}
    * @returns {Promise<Object>} Resolves with the registration response object
    */
   async register (options) {
@@ -208,7 +208,7 @@ class RelyingParty {
    * not support dynamic registration and which requires pre-registration by
    * some 'out of band' method.
    *
-   * @param options {Object}
+   * @param options {object}
    * @param idp {string} Key identifying which registration data should be retrieved.
    * @returns {Promise<Object>} Resolves with the registration response object.
    */
@@ -243,7 +243,7 @@ class RelyingParty {
   /**
    * createRequest
    *
-   * @param options {Object} Authn request options hashmap
+   * @param options {object} Authn request options hashmap
    * @param options.redirect_uri {string}
    * @param options.response_type {string} e.g. 'code' or 'id_token token'
    * @param session {Session|Storage} req.session or localStorage

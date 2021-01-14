@@ -43,7 +43,7 @@ class PoPToken extends JWT {
   /**
    * issue
    *
-   * @param options {Object}
+   * @param options {object}
    * @param options.iss {string} Token issuer (RP client_id)
    * @param options.aud {string|Array<string>} Audience for the token
    *   (such as the Resource Server url)

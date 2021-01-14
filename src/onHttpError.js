@@ -20,7 +20,7 @@
  *
  * @throws {Error} For http status codes > 300
  *
- * @return {Object} fetch response object (passed through if no error)
+ * @return {object} fetch response object (passed through if no error)
  */
 function onHttpError (message = 'fetch error') {
   return (response) => {

@@ -6,7 +6,7 @@ const PoPToken = require('./PoPToken')
 
 class Session {
   /**
-   * @param options {Object}
+   * @param options {object}
    *
    * @param options.credentialType {string} 'access_token' or 'pop_token'
    *

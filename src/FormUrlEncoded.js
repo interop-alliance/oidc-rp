@@ -12,7 +12,7 @@ class FormUrlEncoded {
    * @description
    * Represent an object as x-www-form-urlencoded string.
    *
-   * @param {Object} data
+   * @param {object} data
    * @returns {string}
    */
   static encode (data) {
@@ -32,7 +32,7 @@ class FormUrlEncoded {
    * Parse a x-www-form-urlencoded into an object.
    *
    * @param {string} data
-   * @returns {Object}
+   * @returns {object}
    */
   static decode (data) {
     const obj = {}
