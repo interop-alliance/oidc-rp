@@ -1,3 +1,23 @@
+## v0.13.0 - 2021-04-17
+
+### Changed
+- Switch from `isomorphic-fetch` to `cross-fetch` library (fixes weird 
+  downstream error during `discover()`).
+
+## v0.12.0-v0.12.4 - 2021-01-13
+
+### Added
+- Implement PKCE.
+
+### Changed
+- Switch webpack excludes from webpack.config to package.json.
+- Use universal-base64 lib.
+
+## v0.11.0 - 2019-11-14
+
+### Changed
+- Major refactor to use es7 async/await.
+
 ## v0.10.0 - 2019-11-08
 
 ### Changed
