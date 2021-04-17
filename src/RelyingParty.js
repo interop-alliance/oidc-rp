@@ -159,11 +159,23 @@ class RelyingParty {
 
     assert(issuer, 'RelyingParty provider must define "url"')
 
-    const url = new URL(issuer)
-    url.pathname = '.well-known/openid-configuration'
+    const url = new URL('.well-known/openid-configuration', issuer)
 
-    const response = await fetch(url.toString())
-      .then(onHttpError('Error fetching openid configuration'))
+    const discoverUrl = url.toString()
+
+    let response
+    try {
+      response = await fetch(discoverUrl)
+        .then(onHttpError('Error fetching openid configuration'))
+    } catch (e) {
+      const error = new Error(
+        `Error fetching issuer openid-configuration "${discoverUrl}": ` +
+        e.message
+      )
+      error.cause = e
+      error.statusCode = 400
+      throw error
+    }
 
     const json = await response.json()
     this.provider.configuration = json
