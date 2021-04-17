@@ -2,11 +2,11 @@
 /**
  * Dependencies
  */
-require('isomorphic-fetch')
+const fetch = require('cross-fetch')
 const assert = require('assert')
 const crypto = require('./crypto')
 const { encode: base64urlEncode } = require('base64url-universal')
-const Headers = fetch.Headers ? fetch.Headers : global.Headers
+const Headers = fetch.Headers // ? fetch.Headers : global.Headers
 const FormUrlEncoded = require('./FormUrlEncoded')
 const IDToken = require('./IDToken')
 const Session = require('./Session')

@@ -3,9 +3,9 @@
 /**
  * Dependencies
  */
-require('isomorphic-fetch')
+const fetch = require('cross-fetch')
 const assert = require('assert')
-const Headers = fetch.Headers ? fetch.Headers : global.Headers
+const Headers = fetch.Headers // ? fetch.Headers : global.Headers
 const { JWKSet } = require('@solid/jose')
 const AuthenticationRequest = require('./AuthenticationRequest')
 const AuthenticationResponse = require('./AuthenticationResponse')
