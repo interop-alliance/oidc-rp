@@ -1,6 +1,6 @@
 'use strict'
 
-require('isomorphic-fetch')
+const fetch = require('cross-fetch')
 const onHttpError = require('./onHttpError')
 const PoPToken = require('./PoPToken')
 
