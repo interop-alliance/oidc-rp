@@ -39,7 +39,7 @@
   },
   "homepage": "https://github.com/solid/oidc-rp",
   "dependencies": {
-    "@solid/jose": "^0.6.4",
+    "@solid/jose": "^0.6.5",
     "assert": "^2.0.0",
     "base64url-universal": "^1.1.0",
     "bnid": "^2.0.0",

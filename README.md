@@ -9,7 +9,7 @@
 - [x] Authorization Code, Implicit, and Hybrid grants
 - [x] Relying Party initiated logout
 - [ ] Refresh grant
-- [ ] Client Credentials grant
+- [X] Client Credentials grant
 - [ ] Key rotation using JWK `kid` value
 - [ ] Session management
 - [ ] front- and back-channel logout
